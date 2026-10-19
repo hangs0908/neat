@@ -21,7 +21,7 @@ enum ThawBarCommandDrag {
 
     static func isHiddenDrop(item: CGRect, control: CGRect, point: CGPoint) -> Bool {
         !item.isEmpty && !control.isEmpty && item.midY >= control.minY && item.midY <= control.maxY
-            && point.y >= control.minY && point.y <= control.maxY && item.midX < control.minX
+            && point.y >= control.minY && point.y <= control.maxY && point.x < control.minX && item.midX < control.minX
     }
 
     static func drop(_ item: MenuBarItem, at point: CGPoint, appState: AppState) {
@@ -67,7 +67,7 @@ enum ThawBarCommandDrag {
         else { return }
         let controller = appState.menuBarManager.sectionController
         let members = movingItems(current, appState: appState)
-        let previous = controller.displayOrdered(appState.itemManager.managedItems(for: .hidden), in: .hidden)
+        let previous = controller.ordered(appState.itemManager.managedItems(for: .hidden), in: .hidden)
         let drop = LayoutDropCommit.Drop(
             items: members,
             source: controller.section(for: current),
@@ -82,7 +82,7 @@ enum ThawBarCommandDrag {
 
     private static func movingItems(_ item: MenuBarItem, appState: AppState) -> [MenuBarItem] {
         let controller = appState.menuBarManager.sectionController
-        let items = controller.displayOrdered(appState.itemManager.managedItems(for: controller.section(for: item)), in: controller.section(for: item))
+        let items = controller.ordered(appState.itemManager.managedItems(for: controller.section(for: item)), in: controller.section(for: item))
         guard let group = appState.itemGroupManager.resolvedGroup(containing: item, in: items) else { return [item] }
         return group.memberIndices.compactMap { items.indices.contains($0) ? items[$0] : nil }
     }

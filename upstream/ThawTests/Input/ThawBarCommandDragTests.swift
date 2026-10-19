@@ -35,6 +35,8 @@ struct ThawBarCommandDragTests {
         let right = CGRect(x: 230, y: 0, width: 24, height: 24)
         #expect(ThawBarCommandDrag.isHiddenDrop(item: left, control: control, point: CGPoint(x: 180, y: 12)))
         #expect(!ThawBarCommandDrag.isHiddenDrop(item: right, control: control, point: CGPoint(x: 180, y: 12)))
+        #expect(!ThawBarCommandDrag.isHiddenDrop(item: left, control: control, point: CGPoint(x: 280, y: 12)))
+        #expect(!ThawBarCommandDrag.isHiddenDrop(item: left, control: control, point: CGPoint(x: 210, y: 12)))
         #expect(!ThawBarCommandDrag.isHiddenDrop(item: left, control: control, point: CGPoint(x: 180, y: 50)))
         #expect(!ThawBarCommandDrag.isHiddenDrop(item: left, control: .zero, point: CGPoint(x: 180, y: 12)))
     }

@@ -2,6 +2,8 @@
 
 검증 환경: macOS 27.0.1, Xcode 27, `feature/hidden-bar-command-drag` 브랜치.
 
+최신 결과(2026-10-19): 권한 차단을 해소하고 후속 결함 3건을 수정했다. 최신 서명 앱에서 연속 꺼내기·왼쪽 드롭 숨김·잘못된 드롭·즉시 Escape 취소·대기 및 재실행 유지 검증을 수행했다. 아래 초기 미완료 기록은 중단 당시의 이력이다. Mission Control과 캡처 타이밍의 영향은 마지막 절에 기록했다.
+
 ## 구현 범위
 
 - 메뉴바 아래 별도 히든바에서 Cmd 드래그하여 Neat 오른쪽 메뉴바에 아이콘을 꺼낸다.
@@ -25,8 +27,56 @@
 
 ## 실제 조작 검증
 
-미완료. 컴퓨터 조작 도구에서 Neat의 메뉴바 아이콘이 노출되지 않고 앱 스크린샷은 숨겨진 1픽셀 창만 반환했다. SystemUIServer와 Control Center 접근도 시간 초과됐다. 다른 macOS 화면 캡처·입력 자동화 사용에 대한 사용자 응답을 기다리고 있다. 사용자 배치는 변경하지 않았다.
+초기 검증은 미완료였다. 컴퓨터 조작 도구에서 Neat의 메뉴바 아이콘이 노출되지 않고 앱 스크린샷은 숨겨진 1픽셀 창만 반환했다. SystemUIServer와 Control Center 접근도 시간 초과됐다. 당시에는 다른 macOS 화면 캡처·입력 자동화 사용에 대한 사용자 응답을 기다렸으며 사용자 배치는 변경하지 않았다.
 
 남은 검증은 히든바에서 아이콘 두 개 연속 꺼내기, 메뉴바에서 Neat 왼쪽으로 이동, 드래그 중 펼침 방지, Escape·잘못된 드롭 취소, 대기 후 및 앱 재실행 후 배치 유지이다. 실제 조작 검증 전까지 해결 완료로 간주하지 않는다.
 
+### 중단 후 검증 재개 (2026-10-19)
+
+- 설치본이 최신 빌드와 달라 기존 앱을 종료하고 `build/Neat.app`을 `/Applications/Neat.app`에 설치·실행했다. 두 실행 파일의 SHA-256은 `7baf5e0d59d7a31026d23206436cc3f39eae963b2a5caf09371dee785f7b8d2d`로 일치한다. 기존 설치본과 최신 빌드의 지정 서명 요구사항이 같으며, 최신 빌드의 엄격한 서명 검증도 통과했다.
+- `./test.command`를 다시 실행해 서명 회귀 검사 3건과 정책 테스트 5건이 통과했다. 앱 네이티브 테스트·전체 빌드·lint는 이번 재개 과정에서 다시 실행하지 않았으며 위의 기존 결과를 유지한다.
+- Finder에서 설치된 앱을 실제로 열어 설정창의 보임·숨김 목록과 손쉬운 사용·배치 파일 접근·화면 기록의 `Granted` 표시를 확인했다. 자동 닫기와 로그인 시 실행은 모두 켜짐이었다. 아이콘 배치와 동작 설정은 변경하지 않았다.
+- 컴퓨터 조작 도구의 Neat 화면 캡처는 여전히 1픽셀 창을 반환했고, 문서화된 드래그 API에는 Cmd 보조 키 인자가 없다. 실제 Cmd+드래그를 수행하기 위한 별도 macOS 화면 캡처·CGEvent 자동화 허용을 요청했으며, 응답 전에는 이 경로를 실행하지 않았다. 실제 드래그·취소·시간 경과·재실행 유지 검증은 계속 미완료다.
+
 바깥 저장소에는 원격이 없어 PR·원격 CI·승인은 수행하지 않았다. 로컬 테스트와 독립 리뷰를 원격 승인으로 간주하지 않는다.
+
+### 권한 차단 확인 (2026-10-19 재시작)
+
+- macOS 화면 캡처 실행이 허용되어 실제 화면을 확인했다. 검증 도구 `/private/tmp/neat-ui-verification info`는 `accessibility=false capture=true`를 반환했다.
+- 시스템 설정의 손쉬운 사용 권한 화면을 열어 Neat과 Codex Computer Use는 켜져 있고 iTerm은 꺼져 있음을 확인했다. 터미널 기반 Cmd 드래그 검증을 위해 사용자에게 iTerm 권한 활성화를 요청했다. 권한은 직접 변경하지 않았다.
+- 설치본과 빌드의 실행 파일 SHA-256은 위 기록과 동일했다. 이번에는 드래그 입력이나 배치 변경을 수행하지 않았으며 실제 조작 검증은 미완료다. 설정 화면 근거는 `build/command-drag-resume.png`에 저장했다.
+
+### 권한 해소 후 수정 및 최종 검증 (2026-10-19)
+
+사용자가 iTerm 손쉬운 사용 권한을 켠 뒤 `accessibility=true capture=true`를 확인했다. 허용된 CGEvent 입력과 macOS 화면 캡처로 실제 설치 앱을 조작했다.
+
+후속 수정:
+
+- 독립 리뷰에서 찾은 오른쪽 드롭의 잘못된 숨김 판정을 수정했다. 드롭 마우스 좌표도 Neat 왼쪽인지 검사한다. 새 두 회귀 단언은 수정 전 실패하고 수정 후 통과했다.
+- 숨김 대상과 이동 그룹의 순서에는 임시 화면 순서 대신 저장된 순서를 사용한다.
+- 실제 로그에서 보임 순서 적용 성공 직후 경계 복구가 같은 항목을 다시 Neat 왼쪽으로 이동시키는 것을 확인했다. 순서가 검증된 화면 항목만 물리 이동 대기 목록에서 제거해 후속 재이동을 막았다. 누락·화면 밖 항목의 이동 의무는 유지한다.
+- 개발 대화 기록 없는 독립 에이전트가 수정들을 읽기 전용으로 재검토했으며 추가 조치가 필요한 문제는 발견하지 못했다.
+
+자동 검사:
+
+- 관련 6개 테스트 묶음: 58개 테스트, 매개변수별 실행 71건 통과, 실패 0건. 로그: `build/command-drag-followup-green.log`. 결과: `build/DerivedData/Logs/Test/Test-Thaw-2026.10.19_15-36-38-+0900.xcresult`.
+- `./test.command`: 서명 회귀 검사 3건과 정책 테스트 5건 통과.
+- `./build.command`: Release 빌드·고정 인증서 서명·엄격 검증 통과. 설치본에도 엄격 서명 검증을 수행했다.
+- 엄격 lint: 658개 파일에서 위반 0건. 로그: `build/command-drag-followup-lint.log`. 기존 baseline 277건 중 수정 파일의 길이 정보 3건만 갱신했고 새 예외는 추가하지 않았다.
+- 설치본과 최신 빌드 실행 파일 SHA-256: `3eb8b54d6644be78a759e4daf3ed76241edb3a2dc3cb84dc61ce0fbd0203a6f0`.
+- 전체 앱 테스트·Sonar 커버리지·swiftformat은 실행하지 않았다. 원격이 없어 PR·원격 CI·승인·병합은 수행하지 않았다.
+
+실제 조작 및 근거:
+
+| 조작 | 관찰 결과 | 근거 |
+| --- | --- | --- |
+| 히든바의 Shottr와 클립보드 아이콘을 Cmd 드래그로 연속 꺼내기 | 패널을 다시 열지 않고 두 번째 항목도 꺼냈으며 지정한 보임 순서대로 배치됨 | `build/command-drag-final-first-during.png`, `build/command-drag-final-second-during.png`, `build/command-drag-final-two-visible.png` |
+| 드롭 후 15초 대기 | Shottr가 Neat 오른쪽에 유지됨. AX 좌표 Neat x=979…1022, Shottr x=1104…1128 | `build/command-drag-placement-green.log` |
+| 앱 종료 후 재실행 및 10초 대기 | 두 항목의 순서와 위 좌표 유지 | `build/command-drag-placement-relaunch.log` |
+| 실제 메뉴바 항목을 Neat 왼쪽으로 Cmd 드래그 | 정착·캐시 갱신 후 해당 항목이 숨김으로 전환됨. 다른 숨김 항목은 실제 메뉴바에 펼쳐지지 않음 | `build/command-drag-final-native-slow.png` 및 후속 화면 확인 |
+| 메뉴바 아래 잘못된 위치에 드롭 | 보임·숨김 항목과 순서 유지 | `build/command-drag-final-invalid.png` 및 저장 순서 확인 |
+| 드래그 후 화면 캡처 전에 Cmd를 놓고 즉시 Escape | 사전 항목과 보임·숨김 순서 유지. 사전 아이콘이 실제 메뉴바에 추가되지 않음 | `build/command-drag-final-immediate-escape.png` 및 저장 순서 확인 |
+
+검증 도중 메뉴바 위로 드래그할 때 Mission Control이 열리는 환경 동작이 관찰됐다. 캡처를 먼저 수행한 취소 시도에서는 Escape가 Mission Control에 소비되어 항목이 이동했으며, 이 시도들을 취소 성공으로 계산하지 않았다. 캡처보다 먼저 즉시 Escape를 전송한 별도 시도에서 취소를 확인했다. Mission Control이 열린 상태에서 지연된 Escape의 취소 보장은 이번 검증 범위에 포함하지 않는다.
+
+검증 후 설정 화면에서 Shottr·클립보드·Karabiner를 원래 숨김 순서로 복원했다. 종료돼 있던 Spotlight(`com.apple.campo`)를 다시 실행하고 원래 메뉴바 위치로 복원했다. 최종 숨김 순서는 Shottr, 클립보드, Karabiner, 사전, Telegram, KakaoTalk, Magnet, Alfred이며 자동 닫기·로그인 실행 설정은 켜짐을 유지했다. 복원 화면: `build/command-drag-restored-settings.png`.
