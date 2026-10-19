@@ -26,9 +26,9 @@ extension MenuBarItemManager {
     }
 
     /// Records the end of a ⌘-drag and reads the sections it produced.
-    func noteUserMenuBarDragEnded() {
+    func noteUserMenuBarDragEnded(draggedItem: MenuBarItem? = nil, dropLocation: CGPoint? = nil) {
         lastUserMenuBarDragEnd = .now
-        scheduleObservedMembershipAdoption(reason: "⌘-drag", afterUserDrag: true)
+        scheduleObservedMembershipAdoption(reason: "⌘-drag", afterUserDrag: true, draggedItem: draggedItem, dropLocation: dropLocation)
     }
 
     /// Adopt divider-weight membership without moving items: Manual after drags, mode switches, and launch; Automatic only after user drags.
@@ -145,7 +145,9 @@ extension MenuBarItemManager {
     }
 
     /// Waits for the position table to settle before adopting membership.
-    func scheduleObservedMembershipAdoption(reason: String, afterUserDrag: Bool = false) {
+    func scheduleObservedMembershipAdoption(
+        reason: String, afterUserDrag: Bool = false, draggedItem: MenuBarItem? = nil, dropLocation: CGPoint? = nil
+    ) {
         guard arrangementIsManual || afterUserDrag else { return }
         manualMembershipTask?.cancel()
         manualMembershipTask = Task { @MainActor [weak self] in
@@ -153,7 +155,11 @@ extension MenuBarItemManager {
             guard !Task.isCancelled, let self else { return }
             await cacheItemsRegardless(skipRecentMoveCheck: true, skipSavedLayoutApply: true)
             guard !Task.isCancelled else { return }
-            adoptObservedMembership(reason: reason, afterUserDrag: afterUserDrag)
+            if afterUserDrag, NeatPolicy.useSeparateBar, let appState {
+                await ThawBarCommandDrag.adoptNativeDrop(draggedItem, at: dropLocation, appState: appState)
+            } else {
+                adoptObservedMembership(reason: reason, afterUserDrag: afterUserDrag)
+            }
             if afterUserDrag, let controller = appState?.menuBarManager.sectionController {
                 let inventory = await MenuBarItemAXProvider.menuBarInventoryConcurrent(freshOnly: true)
                 guard !Task.isCancelled, appState?.isDraggingMenuBarItem != true,
