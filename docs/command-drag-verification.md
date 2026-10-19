@@ -77,6 +77,8 @@
 | 메뉴바 아래 잘못된 위치에 드롭 | 보임·숨김 항목과 순서 유지 | `build/command-drag-final-invalid.png` 및 저장 순서 확인 |
 | 드래그 후 화면 캡처 전에 Cmd를 놓고 즉시 Escape | 사전 항목과 보임·숨김 순서 유지. 사전 아이콘이 실제 메뉴바에 추가되지 않음 | `build/command-drag-final-immediate-escape.png` 및 저장 순서 확인 |
 
-검증 도중 메뉴바 위로 드래그할 때 Mission Control이 열리는 환경 동작이 관찰됐다. 캡처를 먼저 수행한 취소 시도에서는 Escape가 Mission Control에 소비되어 항목이 이동했으며, 이 시도들을 취소 성공으로 계산하지 않았다. 캡처보다 먼저 즉시 Escape를 전송한 별도 시도에서 취소를 확인했다. Mission Control이 열린 상태에서 지연된 Escape의 취소 보장은 이번 검증 범위에 포함하지 않는다.
+검증 도중 메뉴바 위로 드래그할 때 Mission Control이 열리는 환경 동작이 관찰됐다. 캡처를 먼저 수행한 취소 시도에서는 Escape가 Mission Control에 소비되어 항목이 이동했으며, 이 시도들을 취소 성공으로 계산하지 않았다. 캡처보다 먼저 즉시 Escape를 전송한 별도 시도에서 취소를 확인했다.
+
+사용자 지시(2026-10-19)에 따라 Mission Control 관련 동작과 진입 후 지연된 Escape 취소 검증은 완료 조건에서 제외한다. 이 항목은 남은 검증이나 완료 차단 사유로 취급하지 않는다.
 
 검증 후 설정 화면에서 Shottr·클립보드·Karabiner를 원래 숨김 순서로 복원했다. 종료돼 있던 Spotlight(`com.apple.campo`)를 다시 실행하고 원래 메뉴바 위치로 복원했다. 최종 숨김 순서는 Shottr, 클립보드, Karabiner, 사전, Telegram, KakaoTalk, Magnet, Alfred이며 자동 닫기·로그인 실행 설정은 켜짐을 유지했다. 복원 화면: `build/command-drag-restored-settings.png`.
