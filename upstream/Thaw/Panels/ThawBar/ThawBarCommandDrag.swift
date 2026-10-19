@@ -77,7 +77,12 @@ enum ThawBarCommandDrag {
             isBatch: true
         )
         guard !LayoutDropCommit.refuses(drop, appState: appState) else { return }
-        _ = await LayoutDropCommit.perform(drop, appState: appState)
+        guard await LayoutDropCommit.perform(drop, appState: appState) else { return }
+        // 같은 숨김 섹션의 드롭도 임시 표시를 끝내고 실제 메뉴바에서 숨긴다.
+        for member in members {
+            controller.concealTemporarilyRevealedItem(member.uniqueIdentifier)
+        }
+        controller.refresh(forceRestrictionPulse: true, forceReapply: true)
     }
 
     private static func movingItems(_ item: MenuBarItem, appState: AppState) -> [MenuBarItem] {

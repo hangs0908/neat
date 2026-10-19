@@ -2,7 +2,7 @@
 
 검증 환경: macOS 27.0.1, Xcode 27, `feature/hidden-bar-command-drag` 브랜치.
 
-최신 결과(2026-10-19): 권한 차단을 해소하고 후속 결함 3건을 수정했다. 최신 서명 앱에서 연속 꺼내기·왼쪽 드롭 숨김·잘못된 드롭·즉시 Escape 취소·대기 및 재실행 유지 검증을 수행했다. 아래 초기 미완료 기록은 중단 당시의 이력이다. Mission Control과 캡처 타이밍의 영향은 마지막 절에 기록했다.
+최신 결과(2026-10-19): 임시 표시된 아이콘을 Neat 왼쪽으로 옮겨도 실제 메뉴바에 남는 추가 결함을 재현하고 수정했다. 아래 기존 검증은 일반 보임→숨김 전환만 확인했으며, 임시 표시된 숨김 항목의 재드롭은 누락했다. 최신 재현·수정 검증은 마지막 절에 기록한다.
 
 ## 구현 범위
 
@@ -82,3 +82,21 @@
 사용자 지시(2026-10-19)에 따라 Mission Control 관련 동작과 진입 후 지연된 Escape 취소 검증은 완료 조건에서 제외한다. 이 항목은 남은 검증이나 완료 차단 사유로 취급하지 않는다.
 
 검증 후 설정 화면에서 Shottr·클립보드·Karabiner를 원래 숨김 순서로 복원했다. 종료돼 있던 Spotlight(`com.apple.campo`)를 다시 실행하고 원래 메뉴바 위치로 복원했다. 최종 숨김 순서는 Shottr, 클립보드, Karabiner, 사전, Telegram, KakaoTalk, Magnet, Alfred이며 자동 닫기·로그인 실행 설정은 켜짐을 유지했다. 복원 화면: `build/command-drag-restored-settings.png`.
+
+### 임시 표시 아이콘이 메뉴바에 남는 문제 (2026-10-19)
+
+- 사용자 제보 화면의 m 아이콘은 `com.meta.endo:endo-menu-bar-item`이다. 수정 전 설치본에서 숨김바의 이 아이콘을 우클릭하면 `revealInPlace`가 실제 메뉴바에 임시 표시했다. 이를 Cmd 드래그로 Neat 왼쪽에 다시 놓으면 숨김 목록에 있으면서 메뉴바에도 계속 남았다. 정착 후 화면: `build/native-hide-temporary-red-result.png`.
+- 원인: 이미 숨김인 항목의 `LayoutDropCommit.perform`는 같은 섹션 재정렬로 처리하여 순서만 저장한다. 임시 표시 해제가 실행되지 않는다. 수정 전 로그에서 16:16:53의 `setSectionOrder(hidden)` 뒤 해제 이벤트가 없었으며, 실행 로그를 검사하는 단언도 실패했다.
+- 수정: 유효한 드롭이 성공한 뒤 이동한 모든 그룹 멤버의 임시 표시를 해제하고, 기존 컨트롤러 API로 숨김 제한을 강제 재적용한다. 거절되거나 실패한 이동은 재적용하지 않는다.
+- 개발 대화 기록 없는 독립 리뷰 에이전트가 관련 diff와 호출 경로를 읽기 전용으로 검토했으며, 조치가 필요한 정확성·회귀·보안 문제를 발견하지 못했다.
+
+최신 설치본 검증:
+
+- `./test.command`: 서명 회귀 검사 3건·정책 테스트 5건 통과.
+- 드롭 판정·섹션 판정·바깥 클릭의 기존 네이티브 테스트 27건, 매개변수 실행 37건 통과. `build/native-hide-tests.log`.
+- Release 빌드·고정 인증서 서명·설치본 엄격 서명 검증 통과. 빌드와 설치본 실행 파일 SHA-256: `9289eb20579617112f716db3af16d26509c579a057cb71cc9310aa00290cb238`.
+- 엄격 lint: 658개 파일, 위반 0건. `build/native-hide-lint.log`. 기존 baseline 변경 없음.
+- 실제 설치 앱에서 같은 우클릭→메뉴바 임시 표시→Neat 왼쪽 Cmd 드래그를 반복했다. 정착 후 m 아이콘이 실제 메뉴바에서 사라졌으며, 숨김바를 다시 열면 해당 아이콘은 유지됐다. 이후 1분 이상 재표시되지 않았다. 화면: `build/native-hide-temporary-green-result.png`, `build/native-hide-hidden-bar-green.png`.
+- 실행 로그에서 16:22:03의 순서 저장 직후 `concealTemporarilyRevealedItem`과 `forced=true, forceReapply=true`를 확인했다. 수정 전 실패한 동일 로그 단언도 통과했다. `build/native-hide-temporary-green.log`. 이 검사는 실제 실행 경로의 단언이며 독립적인 단위 테스트를 새로 추가한 것은 아니다.
+- 테스트로 바뀐 Shottr 숨김 순서와 Neat·AlDente 보임 순서를 설정창에서 복원했다. 종료된 Spotlight는 재실행하고 원래 RunCat 오른쪽 위치로 복원했다. 자동 닫기·로그인 실행 설정은 켜짐을 유지했다. 숨김 목록 마지막의 Muse는 사용자 제보 시점의 상태대로 유지했다.
+- 전체 앱 테스트·Sonar 커버리지는 실행하지 않았다. 원격이 없어 PR·원격 CI·승인·병합은 수행하지 않았다. Mission Control은 앞선 사용자 지시대로 검증 범위에서 제외했다.
