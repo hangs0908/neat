@@ -1,0 +1,87 @@
+{
+  "color-space-for-untagged-svg-colors": "display-p3",
+  "features": [
+    "refractivity",
+    "specular-location"
+  ],
+  "fill-specializations": [
+    {
+      "value": {
+        "linear-gradient": [
+          "srgb:0.16000,0.23000,0.36000,1.00000",
+          "srgb:0.07500,0.12000,0.21000,1.00000"
+        ],
+        "orientation": {
+          "start": {
+            "x": 0.5,
+            "y": 0
+          },
+          "stop": {
+            "x": 0.5,
+            "y": 1
+          }
+        }
+      }
+    }
+  ],
+  "groups": [
+    {
+      "name": "Menu Bar",
+      "layers": [
+        {
+          "name": "menu-bar",
+          "image-name": "menu-bar.svg",
+          "hidden": false,
+          "opacity": 1.0,
+          "glass-specializations": [
+            {
+              "value": false
+            }
+          ],
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "hidden": false,
+      "opacity": 1,
+      "lighting": "individual",
+      "blur-material": 0,
+      "refractivity": {
+        "enabled": false,
+        "strength": 0.45,
+        "depth": 0.55
+      },
+      "shadow-specializations": [
+        {
+          "value": {
+            "kind": "layer-color",
+            "opacity": 0
+          }
+        }
+      ],
+      "specular-specializations": [
+        {
+          "value": "inside"
+        }
+      ],
+      "translucency-specializations": [
+        {
+          "value": {
+            "enabled": false,
+            "value": 0.5
+          }
+        }
+      ]
+    }
+  ],
+  "supported-platforms": {
+    "squares": [
+      "macOS"
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="150 300 724 454">
+  <defs>
+    <mask id="barCutouts" maskUnits="userSpaceOnUse" x="150" y="300" width="724" height="454">
+      <rect x="150" y="300" width="724" height="454" fill="white"/>
+      <g fill="black">
+        <rect x="214" y="427" width="112" height="42" rx="21"/>
+        <rect x="548" y="421" width="54" height="54" rx="15"/>
+        <rect x="642" y="421" width="54" height="54" rx="15"/>
+        <rect x="736" y="421" width="54" height="54" rx="15"/>
+      </g>
+    </mask>
+  </defs>
+  <g mask="url(#barCutouts)">
+    <rect x="170" y="366" width="684" height="164" rx="44" fill="black"/>
+    <rect x="513" y="583" width="332" height="102" rx="29" fill="none" stroke="black" stroke-width="18"/>
+    <g fill="black">
+      <rect x="548" y="607" width="54" height="54" rx="15"/>
+      <rect x="642" y="607" width="54" height="54" rx="15"/>
+      <rect x="736" y="607" width="54" height="54" rx="15"/>
+    </g>
+  </g>
+</svg>
