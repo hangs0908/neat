@@ -432,12 +432,8 @@ final class AppState {
             for await isDragging in changes {
                 guard let self else { return }
                 guard isDragging != previous else { continue }
-                let dragEnded = previous == true && !isDragging
                 previous = isDragging
                 isDraggingMenuBarItem = isDragging
-                if dragEnded {
-                    itemManager.noteUserMenuBarDragEnded()
-                }
             }
         }
         AnyCancellable { task.cancel() }

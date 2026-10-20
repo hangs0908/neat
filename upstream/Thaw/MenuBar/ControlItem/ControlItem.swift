@@ -971,7 +971,7 @@ extension ControlItem {
             // A drag reveals every section, and the user still needs to see
             // where one ends and the next begins, so a dragged-over divider
             // keeps a sliver of width and draws a "|" in it.
-            let keepsSliver = configuration.showAllSectionsOnUserDrag
+            let keepsSliver = !NeatPolicy.useSeparateBar && configuration.showAllSectionsOnUserDrag
                 && appState.isDraggingMenuBarItem
             collapseStatusItem(toWidth: keepsSliver ? 3 : 0)
             button.appearsDisabled = true

@@ -805,6 +805,10 @@ final class MenuBarItemManager {
                         items: liveItems
                     ) {
                         authoredVisibleOrderPendingPhysicalApply = false
+                        // 실제 순서가 확인된 항목을 경계 복구가 다시 옮기지 않게 한다.
+                        pendingPhysicalSeatIDs.subtract(
+                            liveItems.filter { $0.isOnScreen && identifiers.contains($0.uniqueIdentifier) }.map(\.uniqueIdentifier)
+                        )
                         MenuBarItemManager.diagLog.info(
                             "macOS 27: authored visible order realized on the bar after \(attempt) attempt(s)"
                         )
