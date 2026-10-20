@@ -128,6 +128,10 @@ struct ThawBarItemView: View {
                     },
                     thawMenuProvider: thawMenuProvider
                 )
+                .onCommandDrop(image: image) { [weak itemManager] point in
+                    guard let appState = itemManager?.appState else { return }
+                    ThawBarCommandDrag.drop(item, at: point, appState: appState)
+                }
             }
             // displayName mints an NSRunningApplication per call, faster than
             // the autorelease pool drains here; MenuBarItemDisplayName caches.
@@ -170,6 +174,17 @@ struct ThawBarItemClickView: NSViewRepresentable {
 
         private var leftPress = PressTracker()
         private var rightPress = PressTracker()
+        var commandDropAction: ((CGPoint) -> Void)?
+        var dragImage: NSImage?
+        private var isCommandPress = false
+        private var commandDrag: ThawBarItemDragPreview?
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            if window == nil { cancelOperation(nil) }
+        }
+
+        override var mouseDownCanMoveWindow: Bool { !NSEvent.modifierFlags.contains(.command) }
 
         /// Resolved through MenuBarItemDisplayName so the continuous
         /// updateNSView calls do not leak an NSRunningApplication per tick.
@@ -242,9 +257,30 @@ struct ThawBarItemClickView: NSViewRepresentable {
         }
 
         override func mouseDown(with event: NSEvent) {
+            commandDrag = nil
+            isCommandPress = event.modifierFlags.contains(.command)
+            if isCommandPress {
+                tooltipController.cancel()
+                return
+            }
             super.mouseDown(with: event)
             tooltipController.cancel()
             leftPress.pressBegan()
+        }
+
+        override func mouseDragged(with event: NSEvent) {
+            guard isCommandPress else {
+                super.mouseDragged(with: event)
+                return
+            }
+            if commandDrag == nil {
+                commandDrag = ThawBarItemDragPreview(image: dragImage, size: bounds.size, sourceWindow: window)
+            }
+            commandDrag?.update(with: event)
+        }
+
+        override func cancelOperation(_: Any?) {
+            commandDrag?.cancel()
         }
 
         override func rightMouseDown(with event: NSEvent) {
@@ -268,6 +304,14 @@ struct ThawBarItemClickView: NSViewRepresentable {
         }
 
         override func mouseUp(with event: NSEvent) {
+            if isCommandPress {
+                let shouldDrop = commandDrag?.isCancelled == false
+                let point = event.window?.convertPoint(toScreen: event.locationInWindow) ?? event.locationInWindow
+                isCommandPress = false
+                commandDrag = nil
+                if shouldDrop { commandDropAction?(point) }
+                return
+            }
             super.mouseUp(with: event)
             if leftPress.releaseIsClick {
                 leftClickAction()
@@ -291,6 +335,18 @@ struct ThawBarItemClickView: NSViewRepresentable {
 
     /// Builds Thaw's item menu on demand. Nil where no app state is at hand.
     var thawMenuProvider: (() -> NSMenu?)?
+    var commandDropAction: ((CGPoint) -> Void)?
+    var dragImage: NSImage?
+
+    func onCommandDrop(image: MenuBarItemDisplayImage, action: @escaping (CGPoint) -> Void) -> Self {
+        var copy = self
+        copy.commandDropAction = action
+        switch image {
+        case let .capture(capture): copy.dragImage = NSImage(cgImage: capture.cgImage, size: capture.pointSize)
+        case let .appIcon(image): copy.dragImage = image
+        }
+        return copy
+    }
 
     func makeNSView(context _: Context) -> Represented {
         let view = Represented(
@@ -301,6 +357,8 @@ struct ThawBarItemClickView: NSViewRepresentable {
             onHover: onHover
         )
         view.thawMenuProvider = thawMenuProvider
+        view.commandDropAction = commandDropAction
+        view.dragImage = dragImage
         return view
     }
 
@@ -315,5 +373,7 @@ struct ThawBarItemClickView: NSViewRepresentable {
             onHover: onHover
         )
         nsView.thawMenuProvider = thawMenuProvider
+        nsView.commandDropAction = commandDropAction
+        nsView.dragImage = dragImage
     }
 }

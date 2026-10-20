@@ -27,6 +27,7 @@ final class HIDEventManager {
 
     /// Whether a command-drag of a menu bar item is in progress.
     var isDraggingMenuBarItem = false
+    var pressedMenuBarItem: MenuBarItem?
 
     /// The app-wide state this manager reads settings and sections from.
     /// Weak, because the app state owns the manager.
@@ -321,6 +322,9 @@ final class HIDEventManager {
     /// Returning early only skips the rest of this pipeline, the shared
     /// bookkeeping in receiveMouseDown(_:) still runs afterwards.
     private func receiveLeftMouseDown(_ event: NSEvent, appState: AppState, screen: NSScreen) {
+        pressedMenuBarItem = MouseHelpers.locationCoreGraphics.flatMap { point in
+            appState.itemManager.managedItems.first { $0.isOnScreen && $0.bounds.contains(point) }
+        }
         // A menu armed by an earlier press whose release never arrived must
         // not fire on this click's release.
         pendingControlItemContextMenu = nil

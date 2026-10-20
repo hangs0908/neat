@@ -358,13 +358,8 @@ final class MenuBarItemManager {
     /// Pending self-terminating coalesced cache rerun (see scheduleCoalescedCacheRerun()).
     var coalescedCacheRerunTask: Task<Void, Never>?
 
-    /// Pending membership read after a ⌘-drag; see
-    /// scheduleObservedMembershipAdoption(reason:).
-    var manualMembershipTask: Task<Void, Never>?
-
-    /// When the user's last ⌘-drag in the menu bar ended. See
-    /// isUserArrangingMenuBar.
-    var lastUserMenuBarDragEnd: ContinuousClock.Instant?
+    /// 드래그 종료 후 정착 작업과 자동 이동 보호 시각을 소유한다.
+    let dragSettlement = MenuBarDragSettlement()
 
     /// Keeps the manager's own subscriptions alive for its lifetime.
     private var observers = Set<AnyCancellable>()
@@ -805,6 +800,10 @@ final class MenuBarItemManager {
                         items: liveItems
                     ) {
                         authoredVisibleOrderPendingPhysicalApply = false
+                        // 실제 순서가 확인된 항목을 경계 복구가 다시 옮기지 않게 한다.
+                        pendingPhysicalSeatIDs.subtract(
+                            liveItems.filter { $0.isOnScreen && identifiers.contains($0.uniqueIdentifier) }.map(\.uniqueIdentifier)
+                        )
                         MenuBarItemManager.diagLog.info(
                             "macOS 27: authored visible order realized on the bar after \(attempt) attempt(s)"
                         )

@@ -23,13 +23,8 @@ extension HIDEventManager {
         guard let appState else {
             return
         }
-        // Suppresses caching for 1 s and order restoration for 2 s, then
-        // recaches to pick up the new positions.
-        appState.itemManager.recordExternalMoveOperation()
-        Task { [weak appState] in
-            try? await Task.sleep(for: .milliseconds(500))
-            await appState?.itemManager.cacheItemsRegardless(skipRecentMoveCheck: true)
-        }
+        appState.itemManager.noteUserMenuBarDragEnded(draggedItem: pressedMenuBarItem, dropLocation: MouseHelpers.locationCoreGraphics)
+        pressedMenuBarItem = nil
     }
 
     // MARK: Handle Menu Bar Item Drag Start
@@ -41,12 +36,12 @@ extension HIDEventManager {
     func handleMenuBarItemDragStart(
         with event: NSEvent,
         appState: AppState,
-        screen: NSScreen
+        screen _: NSScreen
     ) {
         guard
             !isDraggingMenuBarItem,
             event.modifierFlags.contains(.command),
-            isMouseInsideMenuBarItem(appState: appState, screen: screen)
+            pressedMenuBarItem != nil
         else {
             return
         }
@@ -56,7 +51,7 @@ extension HIDEventManager {
 
         // Optionally bring every section out for the duration of the drag, so
         // the user can drop an item into one that is currently put away.
-        guard configuration.showAllSectionsOnUserDrag else {
+        guard !NeatPolicy.useSeparateBar, configuration.showAllSectionsOnUserDrag else {
             return
         }
         // Reveal through the section itself, inline: redrawing the dividers
