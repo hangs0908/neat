@@ -43,10 +43,35 @@ env DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
 
 ## Release 빌드
 
-`./build.command`로 Release 빌드·고정 인증서 서명·엄격 서명 검증을 통과했다. 결과물은 `/Users/hangjin/Desktop/neat-worktrees/drag-settlement/build/Neat.app`이다. 실행 파일 SHA-256은 `889f591c33afbba6c570a3846d3e45cda755e65861f9c3dc8ccf7289ae454a14`이다. 설치본 교체와 실행은 아직 하지 않았다.
+`./build.command`로 Release 빌드·고정 인증서 서명·엄격 서명 검증을 통과했다. 결과물은 `/Users/hangjin/Desktop/neat-worktrees/drag-settlement/build/Neat.app`이다. 실행 파일 SHA-256은 `889f591c33afbba6c570a3846d3e45cda755e65861f9c3dc8ccf7289ae454a14`이다. 사용자 승인 후 `/Applications/Neat.app`에 설치·실행했다. 설치본의 SHA-256도 위 값과 일치하며 엄격 서명 검증을 다시 통과했다.
 
-## 남은 검증
+## 실제 조작 검증 — 2026-10-21
 
-실제 조작은 아직 미완료다. 현재 CUA는 Neat의 1픽셀 창만 반환하며 Cmd를 유지한 드래그 입력을 제공하지 않는다. 기존 `/private/tmp/neat-ui-verification`의 CGEvent 도구 재사용과 실제 사용자 배치 임시 변경·복원은 실행 전 승인이 필요하다.
+사용자가 CGEvent 도구 재사용, 최신 앱 교체·재실행, 실제 아이콘 배치 임시 변경·복원을 승인한 뒤 수행했다. `/private/tmp/neat-ui-verification info`에서 입력·화면 캡처 권한을 확인했다. 아래는 자동 테스트와 별개로 실제 설치 앱에서 수행한 조작이다.
 
-남은 항목은 최신 앱 실행, 히든바→메뉴바 연속 이동, 메뉴바→숨김 이동, 취소, 드롭 후 대기, 재실행 후 분류·순서 유지와 사용자 상태 원상 복원이다. 자동 테스트 통과를 실제 조작 검증으로 대신하지 않는다. 전체 앱 테스트·Sonar 커버리지·원격 CI·PR 승인·main 병합은 수행하지 않았다.
+증거 경로는 모두 `build/verification/drag-settlement/ui/` 기준이다.
+
+| 실제 조작 | 관찰한 결과 | 근거 |
+| --- | --- | --- |
+| 히든바에서 Shottr, Folder Hub를 Cmd 드래그로 연속 꺼내기 | 바를 다시 열지 않고 두 항목이 보임으로 이동했다. 이동 중 다른 숨김 항목은 실제 메뉴바에 펼쳐지지 않았다. | `shottr-during.png`, `second-during.png`, `two-visible.png`, `two-visible.plist` |
+| 드롭 후 15초 대기 | 두 항목의 저장 분류·순서가 같고 Shottr가 Neat 오른쪽에 유지됐다. | `after-15s.log`, `after-15s.plist` |
+| 실제 메뉴바의 Shottr를 Neat 왼쪽으로 놓은 뒤 0.92초 만에 오른쪽으로 다시 이동 | 두 번째 드롭 뒤 5초 대기해도 최신 위치와 보임 분류가 유지됐다. 각 조작 직전에 AX 좌표를 다시 읽었다. | `rapid-v2-actions.log`, `rapid-v2-middle.log`, `rapid-v2-result.log`, `rapid-v2-result.png` |
+| 실제 메뉴바의 Shottr를 Neat 왼쪽으로 Cmd 드래그 | 5초 후 실제 메뉴바에서 사라지고 숨김 분류·순서에 기록됐다. | `native-hide-v2-actions.log`, `native-hidden-v2.png`, `native-hidden-v2.plist` |
+| 히든바의 Shottr를 메뉴바로 끄는 도중 Escape | 놓은 뒤에도 분류·순서가 변하지 않았다. | `cancel-during.png`, `cancel-result.png`, `cancel-result.plist` |
+| 다시 연 바에서 메뉴바 아래 잘못된 위치로 드롭 | 분류·순서가 변하지 않았다. | `invalid-during.png`, `invalid-result.plist` |
+| 취소 후 Shottr를 다시 유효한 메뉴바 위치로 드롭 | 다음 제스처가 정상 처리돼 Shottr가 Neat 오른쪽에 표시됐다. | `retry-during.png`, `retry-result.log`, `retry-result.png` |
+| Neat 종료·재실행 및 12초 대기 | 테스트 배치의 저장 분류·순서가 재실행 전과 같고 Shottr가 보임에 유지됐다. | `before-relaunch.plist`, `after-relaunch.plist`, `relaunch-position.log`, `relaunch-result.png` |
+
+최초 바 폭 변경으로 아이콘을 놓친 시도와, 첫 빠른 왕복에서 두 번째 드롭이 Neat 아이콘 내부에 떨어진 시도는 통과로 계산하지 않았다. 후자는 중간 안내를 정정하고 실제 좌표를 다시 읽는 `rapid-v2` 절차로 재검증했다. 제품 코드는 이번 실제 조작 검증에서 수정하지 않았다.
+
+## 사용자 상태 복원
+
+검증 전 설치 앱과 환경설정을 `ui/Neat-before.app`, `ui/preferences-before.plist`에 보관했다. 설정 화면에서 Shottr와 Folder Hub를 숨김으로 되돌리고, 숨김 순서를 Shottr → Folder Hub → Karabiner → 올ㅋ사전 → Telegram → 카카오톡 → Alfred → Magnet → Muse로 복원했다. `restored-settings.png`가 화면 근거다.
+
+현재 관찰에서 제외된 기존 저장 항목도 남기기 위해 Neat 종료 후 `MenuBarItemManager.savedSectionOrder` 한 키만 검증 전 값으로 복원했다. 다른 설정은 일괄 덮어쓰지 않았다. 다시 실행해 12초 대기한 뒤 보임·숨김 저장 기록 전체와 자동 닫기 설정이 사전 값과 같은지 확인했다. 로그인 시 실행도 설정 화면에서 계속 켜짐을 확인했다. 최종 Neat 아이콘 AX 위치는 사전과 같은 x=1053…1096이며, 테스트에 사용한 두 아이콘은 숨김에 있다.
+
+최종 근거: `restored-final.plist`, `restored-final.log`, `restored-final.png`. 결과 대조 10개 항목은 `results.json`에 기록했고 모두 통과했다. 이 대조는 실제 실행 증거의 확인이며 별도 제품 자동 테스트 건수에 합산하지 않는다. 최신 설치 앱은 실행 상태로 유지했다.
+
+## 미수행 범위
+
+전체 앱 테스트·Sonar 커버리지·외부 모니터 검증·원격 CI·PR 승인·main 병합은 수행하지 않았다. 실제 조작은 현재 단일 내장 화면에서 검증했다. 소스와 기존 사용자 미커밋 변경은 보존했으며 원격 push는 하지 않았다.
