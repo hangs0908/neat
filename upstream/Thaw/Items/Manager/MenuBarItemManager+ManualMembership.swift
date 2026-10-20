@@ -10,25 +10,15 @@ import MenuBarModel
 import ThawLayout
 
 extension MenuBarItemManager {
-    /// macOS writes positions after the drop; wait before reading the table.
-    static let manualMembershipSettle = Duration.milliseconds(1500)
-
-    /// Holds structural writes through post-drag settling, membership adoption, and a safety margin.
-    static let userArrangementQuietPeriod = Duration.seconds(4)
-
-    /// Suppresses reveal re-seats and boundary repairs during and just after ⌘-drag so they cannot undo the drop.
+    /// 사용자 드래그와 그 직후의 정착 동안 자동 이동을 막는다.
     var isUserArrangingMenuBar: Bool {
-        if appState?.isDraggingMenuBarItem == true {
-            return true
-        }
-        guard let lastUserMenuBarDragEnd else { return false }
-        return lastUserMenuBarDragEnd.duration(to: .now) < Self.userArrangementQuietPeriod
+        dragSettlement.isArranging(isDragging: appState?.isDraggingMenuBarItem == true)
     }
 
     /// Records the end of a ⌘-drag and reads the sections it produced.
     func noteUserMenuBarDragEnded(draggedItem: MenuBarItem? = nil, dropLocation: CGPoint? = nil) {
-        lastUserMenuBarDragEnd = .now
         scheduleObservedMembershipAdoption(reason: "⌘-drag", afterUserDrag: true, draggedItem: draggedItem, dropLocation: dropLocation)
+        recordExternalMoveOperation()
     }
 
     /// Adopt divider-weight membership without moving items: Manual after drags, mode switches, and launch; Automatic only after user drags.
@@ -149,18 +139,21 @@ extension MenuBarItemManager {
         reason: String, afterUserDrag: Bool = false, draggedItem: MenuBarItem? = nil, dropLocation: CGPoint? = nil
     ) {
         guard arrangementIsManual || afterUserDrag else { return }
-        manualMembershipTask?.cancel()
-        manualMembershipTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(for: Self.manualMembershipSettle)
-            guard !Task.isCancelled, let self else { return }
-            await cacheItemsRegardless(skipRecentMoveCheck: true, skipSavedLayoutApply: true)
-            guard !Task.isCancelled else { return }
-            if afterUserDrag, NeatPolicy.useSeparateBar, let appState {
-                await ThawBarCommandDrag.adoptNativeDrop(draggedItem, at: dropLocation, appState: appState)
-            } else {
-                adoptObservedMembership(reason: reason, afterUserDrag: afterUserDrag)
-            }
-            if afterUserDrag, let controller = appState?.menuBarManager.sectionController {
+        dragSettlement.schedule(
+            afterUserDrag: afterUserDrag,
+            refresh: { [weak self] skipSavedLayoutApply in
+                await self?.cacheItemsRegardless(skipRecentMoveCheck: true, skipSavedLayoutApply: skipSavedLayoutApply)
+            },
+            adopt: { [weak self] in
+                guard let self else { return }
+                if afterUserDrag, NeatPolicy.useSeparateBar, let appState {
+                    await ThawBarCommandDrag.adoptNativeDrop(draggedItem, at: dropLocation, appState: appState)
+                } else {
+                    adoptObservedMembership(reason: reason, afterUserDrag: afterUserDrag)
+                }
+            },
+            record: { [weak self] in
+                guard let self, let controller = appState?.menuBarManager.sectionController else { return }
                 let inventory = await MenuBarItemAXProvider.menuBarInventoryConcurrent(freshOnly: true)
                 guard !Task.isCancelled, appState?.isDraggingMenuBarItem != true,
                       recordUserDraggedVisibleOrder(from: itemCache, inventory: inventory, sectionAssignment: controller.sectionAssignment)
@@ -168,6 +161,6 @@ extension MenuBarItemManager {
                 controller.setSectionOrder(savedSectionOrder[sectionKey(for: .visible)] ?? [], for: .visible)
                 scheduleStructuralNormalization(cause: .userDragEnded)
             }
-        }
+        )
     }
 }

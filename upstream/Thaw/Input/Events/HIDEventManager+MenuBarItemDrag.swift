@@ -25,13 +25,6 @@ extension HIDEventManager {
         }
         appState.itemManager.noteUserMenuBarDragEnded(draggedItem: pressedMenuBarItem, dropLocation: MouseHelpers.locationCoreGraphics)
         pressedMenuBarItem = nil
-        // Suppresses caching for 1 s and order restoration for 2 s, then
-        // recaches to pick up the new positions.
-        appState.itemManager.recordExternalMoveOperation()
-        Task { [weak appState] in
-            try? await Task.sleep(for: .milliseconds(500))
-            await appState?.itemManager.cacheItemsRegardless(skipRecentMoveCheck: true)
-        }
     }
 
     // MARK: Handle Menu Bar Item Drag Start
@@ -43,7 +36,7 @@ extension HIDEventManager {
     func handleMenuBarItemDragStart(
         with event: NSEvent,
         appState: AppState,
-        screen: NSScreen
+        screen _: NSScreen
     ) {
         guard
             !isDraggingMenuBarItem,

@@ -358,13 +358,8 @@ final class MenuBarItemManager {
     /// Pending self-terminating coalesced cache rerun (see scheduleCoalescedCacheRerun()).
     var coalescedCacheRerunTask: Task<Void, Never>?
 
-    /// Pending membership read after a ⌘-drag; see
-    /// scheduleObservedMembershipAdoption(reason:).
-    var manualMembershipTask: Task<Void, Never>?
-
-    /// When the user's last ⌘-drag in the menu bar ended. See
-    /// isUserArrangingMenuBar.
-    var lastUserMenuBarDragEnd: ContinuousClock.Instant?
+    /// 드래그 종료 후 정착 작업과 자동 이동 보호 시각을 소유한다.
+    let dragSettlement = MenuBarDragSettlement()
 
     /// Keeps the manager's own subscriptions alive for its lifetime.
     private var observers = Set<AnyCancellable>()

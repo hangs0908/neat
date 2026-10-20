@@ -84,7 +84,6 @@ struct SavedOrderMirrorGateTests {
         manager.savedSectionOrder = [visibleKey: [a, b].map(\.uniqueIdentifier)]
         manager.lastMirroredLiveVisibleIdentifiers = Set([a, b].map(\.uniqueIdentifier))
         manager.savedOrderMirrorGate.noteDisturbance()
-        manager.lastUserMenuBarDragEnd = .now
 
         manager.recordUserDraggedVisibleOrder(from: cache, inventory: Self.snapshot(cache.managedItems), sectionAssignment: [:], displays: Self.displays)
 
