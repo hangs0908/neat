@@ -164,7 +164,7 @@ struct ThawBarItemClickView: NSViewRepresentable {
         }
     }
 
-    final class Represented: NSView, NSDraggingSource {
+    final class Represented: NSView {
         var item: MenuBarItem
         var tooltipDelay: TimeInterval
 
@@ -177,6 +177,12 @@ struct ThawBarItemClickView: NSViewRepresentable {
         var commandDropAction: ((CGPoint) -> Void)?
         var dragImage: NSImage?
         private var isCommandPress = false
+        private var commandDrag: ThawBarItemDragPreview?
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            if window == nil { cancelOperation(nil) }
+        }
 
         override var mouseDownCanMoveWindow: Bool { !NSEvent.modifierFlags.contains(.command) }
 
@@ -251,6 +257,7 @@ struct ThawBarItemClickView: NSViewRepresentable {
         }
 
         override func mouseDown(with event: NSEvent) {
+            commandDrag = nil
             isCommandPress = event.modifierFlags.contains(.command)
             if isCommandPress {
                 tooltipController.cancel()
@@ -262,27 +269,18 @@ struct ThawBarItemClickView: NSViewRepresentable {
         }
 
         override func mouseDragged(with event: NSEvent) {
-            guard isCommandPress, let dragImage else {
+            guard isCommandPress else {
                 super.mouseDragged(with: event)
                 return
             }
-            let marker = NSPasteboardItem()
-            marker.setString(item.uniqueIdentifier, forType: NSPasteboard.PasteboardType("com.neat.hidden-item"))
-            let drag = NSDraggingItem(pasteboardWriter: marker)
-            drag.setDraggingFrame(bounds, contents: dragImage)
-            let session = beginDraggingSession(with: [drag], event: event, source: self)
-            session.animatesToStartingPositionsOnCancelOrFail = false
+            if commandDrag == nil {
+                commandDrag = ThawBarItemDragPreview(image: dragImage, size: bounds.size, sourceWindow: window)
+            }
+            commandDrag?.update(with: event)
         }
 
-        func draggingSession(_: NSDraggingSession, sourceOperationMaskFor _: NSDraggingContext) -> NSDragOperation { .move }
-
-        func ignoreModifierKeys(for _: NSDraggingSession) -> Bool { true }
-
-        func draggingSession(_: NSDraggingSession, endedAt point: NSPoint, operation _: NSDragOperation) {
-            isCommandPress = false
-            // 메뉴바는 전용 페이로드를 받지 않으므로 직접 위치를 검사하되, 버튼을 누른 채 취소한 드래그는 제외한다.
-            guard NSEvent.pressedMouseButtons & 1 == 0 else { return }
-            commandDropAction?(point)
+        override func cancelOperation(_: Any?) {
+            commandDrag?.cancel()
         }
 
         override func rightMouseDown(with event: NSEvent) {
@@ -307,7 +305,11 @@ struct ThawBarItemClickView: NSViewRepresentable {
 
         override func mouseUp(with event: NSEvent) {
             if isCommandPress {
+                let shouldDrop = commandDrag?.isCancelled == false
+                let point = event.window?.convertPoint(toScreen: event.locationInWindow) ?? event.locationInWindow
                 isCommandPress = false
+                commandDrag = nil
+                if shouldDrop { commandDropAction?(point) }
                 return
             }
             super.mouseUp(with: event)

@@ -65,4 +65,71 @@ struct ThawBarCommandDragTests {
         view.mouseUp(with: up)
         #expect(clicks == 0)
     }
+
+    @Test("시스템 드래그 없이 놓은 좌표로 한 번만 이동한다")
+    func commandDragCommitsOnRelease() throws {
+        let view = makeDragView()
+        var drops: [CGPoint] = []
+        view.commandDropAction = { drops.append($0) }
+        view.mouseDown(with: try mouseEvent(.leftMouseDown))
+        view.mouseDragged(with: try mouseEvent(.leftMouseDragged))
+        #expect(drops.isEmpty)
+        view.mouseUp(with: try mouseEvent(.leftMouseUp))
+        view.mouseUp(with: try mouseEvent(.leftMouseUp))
+        #expect(drops == [CGPoint(x: 20, y: 30)])
+    }
+
+    @Test("Escape 취소 후 계속 끌거나 놓아도 이동하거나 클릭하지 않는다")
+    func cancelledCommandDragDoesNotCommit() throws {
+        let view = makeDragView()
+        var drops = 0
+        var clicks = 0
+        view.commandDropAction = { _ in drops += 1 }
+        view.leftClickAction = { clicks += 1 }
+        view.mouseDown(with: try mouseEvent(.leftMouseDown))
+        view.mouseDragged(with: try mouseEvent(.leftMouseDragged))
+        view.cancelOperation(nil)
+        view.mouseDragged(with: try mouseEvent(.leftMouseDragged))
+        view.mouseUp(with: try mouseEvent(.leftMouseUp))
+        #expect(drops == 0)
+        #expect(clicks == 0)
+        // 취소 상태는 다음 제스처까지 남지 않는다.
+        view.mouseDown(with: try mouseEvent(.leftMouseDown))
+        view.mouseDragged(with: try mouseEvent(.leftMouseDragged))
+        view.mouseUp(with: try mouseEvent(.leftMouseUp))
+        #expect(drops == 1)
+    }
+
+    @Test("바가 먼저 닫혀 Escape를 소비해도 드래그를 취소한다")
+    func closingBarCancelsCommandDrag() throws {
+        let window = NSPanel(contentRect: CGRect(x: 100, y: 100, width: 60, height: 60), styleMask: .borderless, backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        let view = makeDragView()
+        window.contentView = view
+        var drops = 0
+        view.commandDropAction = { _ in drops += 1 }
+        view.mouseDown(with: try mouseEvent(.leftMouseDown))
+        view.mouseDragged(with: try mouseEvent(.leftMouseDragged))
+        window.close()
+        view.mouseUp(with: try mouseEvent(.leftMouseUp))
+        #expect(drops == 0)
+        window.contentView = nil
+    }
+
+    private func makeDragView() -> ThawBarItemClickView.Represented {
+        let item = MenuBarItem(
+            tag: MenuBarItemTag(namespace: .string("com.example.test"), title: "test", instanceIndex: 0),
+            windowID: 1, ownerPID: 1, sourcePID: 1, bounds: control, title: "test", isOnScreen: true
+        )
+        let view = ThawBarItemClickView.Represented(item: item, tooltipDelay: 1, leftClickAction: {}, rightClickAction: {}, onHover: { _ in })
+        return view
+    }
+
+    private func mouseEvent(_ type: NSEvent.EventType) throws -> NSEvent {
+        try #require(NSEvent.mouseEvent(
+            with: type, location: CGPoint(x: 20, y: 30), modifierFlags: .command, timestamp: 0,
+            windowNumber: 0, context: nil, eventNumber: 0, clickCount: 1, pressure: 1
+        ))
+    }
+
 }

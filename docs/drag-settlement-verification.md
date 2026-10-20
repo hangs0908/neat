@@ -6,7 +6,7 @@
 
 시간과 동작은 유지한다. 각 드래그 종료의 500ms 빠른 갱신은 독립 실행하고, 교체 가능한 정착 작업은 1.5초 뒤 실행한다. 진행 중 드래그와 종료 후 4초 동안의 자동 이동 보호를 유지한다. 수동 모드 전환 관찰은 드래그 종료 시각을 갱신하지 않고 분류만 채택한다.
 
-`refactor/drag-settlement`는 최신 `origin/main`의 `dd9eac5`에서 만들었다. main에 아직 없는 선행 드래그 커밋은 합쳤다. 원래 작업 트리의 미커밋 드래그 미리보기 변경 3개 파일은 검증 기준으로만 복사했고 이번 리팩터링 커밋에 포함하지 않는다. 원래 작업 트리는 수정하지 않았다.
+`refactor/drag-settlement`는 최신 `origin/main`의 `dd9eac5`에서 만들었다. main에 아직 없는 선행 드래그 커밋은 합쳤다. 원래 작업 트리의 미커밋 드래그 미리보기 변경 3개 파일을 검증 기준으로 복사했다. 최초 리팩터링 커밋에서는 제외했으나, 최종 PR에는 실제 검증한 소스와 일치하도록 독립 리뷰 후 별도 커밋으로 포함했다. 원래 작업 트리는 수정하지 않았다.
 
 ## 자동 검증
 
@@ -74,4 +74,15 @@ env DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
 
 ## 미수행 범위
 
-전체 앱 테스트·Sonar 커버리지·외부 모니터 검증·원격 CI·PR 승인·main 병합은 수행하지 않았다. 실제 조작은 현재 단일 내장 화면에서 검증했다. 소스와 기존 사용자 미커밋 변경은 보존했으며 원격 push는 하지 않았다.
+전체 앱 테스트·Sonar 커버리지·외부 모니터 검증·원격 CI·PR 승인·main 병합은 수행하지 않았다. 실제 조작은 현재 단일 내장 화면에서 검증했다. 원래 작업 트리의 사용자 미커밋 변경은 보존했다. 작업 브랜치는 원격에 push했고 PR #2를 생성했다. 원격 CI 결과와 병합 승인은 별도로 확인해야 한다.
+
+
+## 최종 PR 소스 일치 확인 — 2026-10-21
+
+초기 PR에서 제외한 드래그 미리보기 변경 3개 파일을 별도 커밋으로 포함했다. 포함 전 diff가 실제 조작 검증 때 보관한 `/tmp/neat-drag-preview-baseline.patch`와 바이트 단위로 같음을 `cmp`로 확인했다. 위 Release 빌드와 실제 조작 검증은 최종 PR의 제품 소스 전체를 대상으로 수행한 결과다. 검증 뒤 제품 소스를 추가 수정하지 않았다.
+
+`superpowers:requesting-code-review`에 따라 개발 대화 기록 없는 별도 리뷰 에이전트가 세 파일 및 호출부·이벤트 모니터·기존 드래그 감시 경로를 읽기 전용으로 검토했다. 조치가 필요한 정확성·회귀·보안 문제는 없었으며, 검토에서 제외한 동작도 없었다. 이 리뷰는 실행 검증을 대신하지 않는다.
+
+최종 소스로 기존 6개 테스트 묶음에 CI의 `LaunchAtLoginSettingTests`, `ThawBarOutsideClickTests`를 추가해 재실행했다. 네이티브 테스트 76개, 매개변수별 실행 95건 통과, 실패·건너뜀 0건이다. 명령은 위 재현 명령에 `-only-testing:ThawTests/LaunchAtLoginSettingTests -only-testing:ThawTests/ThawBarOutsideClickTests`를 추가했다.
+
+근거: `/tmp/neat-pr-final-tests.log`, `/tmp/neat-pr-final-test-summary.json`, `/Users/hangjin/Desktop/neat/build/DerivedData/Logs/Test/Test-Thaw-2026.10.21_01-00-19-+0900.xcresult`. 빌드 앱과 설치 앱의 실행 파일 SHA-256은 여전히 위 검증 값과 같다. 테스트 결과와 요약은 `build/verification/drag-settlement/`에도 보관했다.

@@ -7,6 +7,7 @@
 //
 
 import AppKit
+import Combine
 import MenuBarModel
 
 @MainActor
@@ -90,5 +91,67 @@ enum ThawBarCommandDrag {
         let items = controller.ordered(appState.itemManager.managedItems(for: controller.section(for: item)), in: controller.section(for: item))
         guard let group = appState.itemGroupManager.resolvedGroup(containing: item, in: items) else { return [item] }
         return group.memberIndices.compactMap { items.indices.contains($0) ? items[$0] : nil }
+    }
+}
+
+/// 시스템 드래그 세션 없이 아이콘 미리보기와 취소 입력의 수명을 관리한다.
+@MainActor
+final class ThawBarItemDragPreview {
+    private(set) var isCancelled = false
+    private var panel: NSPanel?
+    private var escapeMonitor: EventMonitor?
+    private var windowCloseObserver: AnyCancellable?
+
+    init(image: NSImage?, size: CGSize, sourceWindow: NSWindow?) {
+        if let image {
+            // 일반 드래그 세션은 화면 상단에서 Mission Control을 열므로 미리보기만 직접 움직인다.
+            let panel = NSPanel(contentRect: CGRect(origin: .zero, size: size), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+            panel.isReleasedWhenClosed = false
+            panel.backgroundColor = .clear
+            panel.isOpaque = false
+            panel.ignoresMouseEvents = true
+            panel.hidesOnDeactivate = false
+            panel.level = .mainMenu + 2
+            panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
+            panel.contentView = NSImageView(image: image)
+            self.panel = panel
+        }
+        escapeMonitor = .startUniversal(
+            for: .keyDown,
+            localHandler: { [weak self] event in
+                guard event.keyCode == 53 else { return event }
+                MainActor.assumeIsolated { self?.cancel() }
+                return nil
+            },
+            globalHandler: { [weak self] event in
+                guard event.keyCode == 53 else { return }
+                MainActor.assumeIsolated { self?.cancel() }
+            }
+        )
+        if let sourceWindow {
+            // 바의 기존 Escape 모니터가 먼저 소비해도 닫힘 알림에서 취소한다.
+            windowCloseObserver = NotificationCenter.default.publisher(for: NSWindow.willCloseNotification, object: sourceWindow)
+                .sink { [weak self] _ in self?.cancel() }
+        }
+    }
+
+    isolated deinit {
+        panel?.close()
+    }
+
+    func update(with event: NSEvent) {
+        guard !isCancelled, let panel else { return }
+        let point = event.window?.convertPoint(toScreen: event.locationInWindow) ?? event.locationInWindow
+        panel.setFrameOrigin(CGPoint(x: point.x - panel.frame.width / 2, y: point.y - panel.frame.height / 2))
+        panel.orderFrontRegardless()
+    }
+
+    func cancel() {
+        isCancelled = true
+        panel?.close()
+        panel = nil
+        escapeMonitor?.stop()
+        escapeMonitor = nil
+        windowCloseObserver = nil
     }
 }
