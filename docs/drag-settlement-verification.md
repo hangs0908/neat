@@ -41,8 +41,12 @@ env DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
 
 `superpowers:requesting-code-review`에 따라 개발 대화 기록 없는 별도 에이전트에 요구사항과 이번 diff를 전달했다. 읽기 전용으로 호출 순서, 취소, 참조 수명, 기존 판정·저장 조건을 검토했으며 조치가 필요한 정확성·회귀·보안 문제는 발견하지 못했다. 리뷰 에이전트는 테스트나 실제 조작을 실행하지 않았다.
 
+## Release 빌드
+
+`./build.command`로 Release 빌드·고정 인증서 서명·엄격 서명 검증을 통과했다. 결과물은 `/Users/hangjin/Desktop/neat-worktrees/drag-settlement/build/Neat.app`이다. 실행 파일 SHA-256은 `889f591c33afbba6c570a3846d3e45cda755e65861f9c3dc8ccf7289ae454a14`이다. 설치본 교체와 실행은 아직 하지 않았다.
+
 ## 남은 검증
 
-Release 빌드·서명 결과와 실제 조작 결과는 검증 후 추가한다. 실제 조작은 아직 미완료다. 현재 CUA는 Neat의 1픽셀 창만 반환하며 Cmd를 유지한 드래그 입력을 제공하지 않는다. 기존 `/private/tmp/neat-ui-verification`의 CGEvent 도구 재사용과 실제 사용자 배치 임시 변경·복원은 실행 전 승인이 필요하다.
+실제 조작은 아직 미완료다. 현재 CUA는 Neat의 1픽셀 창만 반환하며 Cmd를 유지한 드래그 입력을 제공하지 않는다. 기존 `/private/tmp/neat-ui-verification`의 CGEvent 도구 재사용과 실제 사용자 배치 임시 변경·복원은 실행 전 승인이 필요하다.
 
 남은 항목은 최신 앱 실행, 히든바→메뉴바 연속 이동, 메뉴바→숨김 이동, 취소, 드롭 후 대기, 재실행 후 분류·순서 유지와 사용자 상태 원상 복원이다. 자동 테스트 통과를 실제 조작 검증으로 대신하지 않는다. 전체 앱 테스트·Sonar 커버리지·원격 CI·PR 승인·main 병합은 수행하지 않았다.
