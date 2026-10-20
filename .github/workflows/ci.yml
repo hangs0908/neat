@@ -1,0 +1,55 @@
+name: Neat CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: 빌드 및 테스트
+    runs-on: xcode-27
+    timeout-minutes: 30
+    env:
+      TEST_RUNNER_XCODE_RUNNING_FOR_PREVIEWS: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: 개발 도구 확인
+        run: |
+          xcodebuild -version
+          swift --version
+      - name: 지정 버전 SwiftLint 설치
+        run: |
+          sh upstream/scripts/install-swiftlint.sh "$RUNNER_TEMP/neat-tools"
+          echo "$RUNNER_TEMP/neat-tools" >> "$GITHUB_PATH"
+      - name: 정적 검사
+        run: sh upstream/scripts/lint.sh --strict
+      - name: 서명 회귀 검사 및 정책 테스트
+        run: ./test.command
+      - name: Release 앱 빌드
+        run: |
+          xcodebuild build -project upstream/Thaw.xcodeproj -scheme Thaw \
+            -configuration Release -destination 'platform=macOS' \
+            -derivedDataPath build/DerivedData \
+            -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
+            CODE_SIGNING_ALLOWED=NO
+      - name: 네이티브 회귀 테스트
+        run: |
+          xcodebuild test -project upstream/Thaw.xcodeproj -scheme Thaw \
+            -configuration Debug -destination 'platform=macOS' \
+            -derivedDataPath build/DerivedData \
+            -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
+            -only-testing:ThawTests/LaunchAtLoginSettingTests \
+            -only-testing:ThawTests/ThawBarOutsideClickTests \
+            CODE_SIGNING_ALLOWED=NO
