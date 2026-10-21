@@ -3,6 +3,7 @@ set -euo pipefail
 neatRoot="$(cd "$(dirname "$0")" && pwd)"
 cd "$neatRoot"
 bash scripts/test-build-signing.sh
+python3 scripts/test-release-metadata.py
 
 if [[ -z "${DEVELOPER_DIR:-}" && -d /Applications/Xcode.app/Contents/Developer ]]; then
     export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer

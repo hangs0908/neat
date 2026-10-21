@@ -290,7 +290,7 @@ final class AppState {
         if Constants.supportsSparkleUpdates {
             Defaults.set(true, forKey: .hasSeenUpdateConsent)
             updatesManager.automaticallyChecksForUpdates = outcome.automaticUpdates
-            updatesManager.automaticallyDownloadsUpdates = outcome.automaticUpdates
+            updatesManager.automaticallyDownloadsUpdates = false
             startUpdaterIfNeeded()
         }
 

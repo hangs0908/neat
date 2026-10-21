@@ -164,7 +164,13 @@ struct AcknowledgementsView: View {
     }
 
     private var licenses: some View {
-        Group {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("PlatformRuntimeKit은 비공개 구성요소이며 별도 라이선스를 따릅니다.")
+            if let url = Bundle.main.url(forResource: "PlatformRuntimeKit-LICENSE", withExtension: "txt") {
+                Button("PlatformRuntimeKit 라이선스 보기") {
+                    NSWorkspace.shared.open(url)
+                }
+            }
             if let notices = Self.notices {
                 Text(notices)
                     .font(ReadingPageType.body)

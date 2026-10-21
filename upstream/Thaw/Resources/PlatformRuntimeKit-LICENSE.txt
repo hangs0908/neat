@@ -1,0 +1,102 @@
+PlatformRuntimeKit License 1.0
+
+Copyright (c) 2026 Thaw App (https://github.com/thaw-app). All rights reserved
+until the Open Date, as set out below.
+
+Why this license exists
+
+PlatformRuntimeKit is the research behind Thaw: how menu bar items are hidden
+and arranged on macOS. We are not trying to sell it or lock anyone in. Thaw is
+free and open source, and so will this be. But our work has been copied
+without permission more than once, and some of those cases ended in
+takedowns. This license protects new work for one year after it is released.
+After that, each version becomes open source under the GPL, automatically.
+Until then, it asks only that you use the kit as part of Thaw and do not take
+it apart to rebuild it elsewhere.
+
+1. Definitions
+
+"Licensor" means Thaw App.
+"Software" means PlatformRuntimeKit, in source or binary form, including the
+prebuilt distributions published at https://github.com/thaw-app/prk-bin.
+"Version" means a release of the Software with its own version number.
+"Release Date" means the date a Version is first published at
+https://github.com/thaw-app/prk-bin or another public location chosen by the
+Licensor.
+"Open Date" means the first anniversary of a Version's Release Date.
+"Thaw Apps" means Thaw and any other application published or maintained by
+the Licensor, including builds of their source code.
+
+This license applies to every Version, including those released before it
+was published, and replaces the Business Source License for them.
+
+2. What you may do
+
+Free of charge, worldwide, you may:
+
+a) use the Software as part of Thaw Apps;
+b) download the Software and build Thaw Apps from source, including your own
+   modified versions of their source code, for personal use, development,
+   testing, and contributing changes back;
+c) distribute unmodified official builds of Thaw Apps that contain the
+   Software;
+d) keep copies of the unmodified Software in package caches, mirrors and
+   build systems used to build Thaw Apps.
+
+Distributing a modified Thaw App that contains the Software needs the
+Licensor's written permission. Ask; we say yes to forks that are not built to
+copy this work.
+
+3. What you may not do
+
+Until a Version's Open Date, you may not, for that Version:
+
+a) decompile, disassemble or otherwise reverse engineer it, or try to derive
+   its source code, mechanisms or techniques;
+b) use it, or anything learned from it, in any software other than Thaw Apps;
+c) modify it, or distribute it apart from Thaw Apps except as allowed in
+   section 2;
+d) remove or change this license or any copyright notice.
+
+These limits do not apply where applicable law expressly allows an act
+despite a contractual restriction, such as the decompilation needed for
+interoperability under Directive 2009/24/EC. They also do not apply to
+security research under section 4.
+
+4. Security research
+
+You may study and test the Software in good faith to find security
+vulnerabilities, provided you report what you find privately to the Licensor
+through the contact in Thaw's SECURITY.md, and do not disclose it publicly
+until it is fixed or 90 days have passed since your report, whichever comes
+first. You may not use what you learn for any other purpose. The Licensor
+will not take legal action against research that follows this section.
+
+5. Open release
+
+On each Version's Open Date, that Version becomes available under the GNU
+General Public License, version 3 or later, and sections 2 and 3 stop
+applying to it. The Licensor will publish its source code, or the source of
+a later Version that includes it, under that license on or soon after the
+Open Date.
+
+If the Licensor publishes no new Version for 12 months in a row, every
+Version reaches its Open Date at the end of that period.
+
+6. Termination
+
+If you break this license, your rights under it end. They are reinstated if
+you stop within 30 days of being notified by the Licensor, unless you have
+been notified before. Termination does not affect anyone who received Thaw
+Apps from you.
+
+7. No trademark rights
+
+This license grants no right to use the Licensor's names, logos or
+trademarks, including Thaw.
+
+8. No warranty
+
+The Software is provided "as is", without warranty of any kind. To the
+extent the law allows, the Licensor is not liable for any damages arising
+from its use.

@@ -9,11 +9,26 @@ import SwiftUI
 import Testing
 @testable import Thaw
 
-/// The About and Privacy panes show the updater's two switches as one
-/// three-way choice. These pin the mapping both panes share.
+/// 자동 확인과 수동 확인만 제공하고 자동 다운로드를 차단한다.
 @MainActor
 @Suite("Automatic updates choice")
 struct AutomaticUpdatesTests {
+    @Test("Neat은 자동 다운로드 선택을 제공하지 않는다")
+    func onlyOffersManualOrCheck() {
+        #expect(AutomaticUpdates.allCases == [.off, .check])
+    }
+
+    @Test("과거 자동 다운로드 설정도 확인 전용으로 읽는다")
+    func legacyDownloadPreferenceChecksOnly() {
+        #expect(AutomaticUpdates(checks: true, downloads: true) == .check)
+    }
+
+    @Test("Neat은 단일 공개 채널만 사용한다")
+    func onlyOffersPublicChannel() {
+        #expect(UpdateChannel.selectable == [.stable])
+        #expect(UpdateChannel.stable.allowedSparkleChannels.isEmpty)
+    }
+
     @Test("Not checking reads as off, whatever the download switch says", arguments: [false, true])
     func notCheckingIsOff(downloads: Bool) {
         #expect(AutomaticUpdates(checks: false, downloads: downloads) == .off)
@@ -24,15 +39,14 @@ struct AutomaticUpdatesTests {
         #expect(AutomaticUpdates(checks: true, downloads: false) == .check)
     }
 
-    @Test("Checking and downloading is download")
+    @Test("다운로드 설정이 남아 있어도 확인 전용이다")
     func checkingAndDownloading() {
-        #expect(AutomaticUpdates(checks: true, downloads: true) == .download)
+        #expect(AutomaticUpdates(checks: true, downloads: true) == .check)
     }
 
     @Test("Each choice sets both switches", arguments: [
         (AutomaticUpdates.off, false, false),
         (AutomaticUpdates.check, true, false),
-        (AutomaticUpdates.download, true, true),
     ])
     func choiceSetsBothSwitches(mode: AutomaticUpdates, checks: Bool, downloads: Bool) {
         #expect(mode.checks == checks)
@@ -42,7 +56,6 @@ struct AutomaticUpdatesTests {
     @Test("Each choice has its own label in the picker", arguments: [
         (AutomaticUpdates.off, "Off"),
         (AutomaticUpdates.check, "Check only"),
-        (AutomaticUpdates.download, "Check and download"),
     ])
     func choiceHasItsOwnLabel(mode: AutomaticUpdates, label: String) {
         #expect(mode.localized == LocalizedStringKey(label))

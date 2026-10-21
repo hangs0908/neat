@@ -27,11 +27,12 @@ final class ControlItemMenuController: NSObject {
     /// Search Items, the section toggles and the recording readouts.
     func makeMenu() -> NSMenu {
         let menu = NSMenu(title: Bundle.main.displayName)
-        guard let appState else {
+        guard appState != nil else {
             return menu
         }
 
         menu.addItem(settingsItem())
+        menu.addItem(checkForUpdatesItem())
         menu.addItem(.separator())
         menu.addItem(quitItem())
 
@@ -199,7 +200,7 @@ final class ControlItemMenuController: NSObject {
 
     private func checkForUpdatesItem() -> NSMenuItem {
         let item = NSMenuItem(
-            title: String(localized: "Check for Updates…"),
+            title: "업데이트 확인…",
             action: #selector(checkForUpdates),
             keyEquivalent: ""
         )
