@@ -68,6 +68,25 @@ final class SettingsProcessAppSideTests {
         Defaults.set(true, forKey: .settingsInOwnProcess)
         #expect(SettingsProcessHost.isEnabledInDefaults() == !SettingsProcessApp.isRequested)
     }
+
+    @Test("별도 설정창의 동의가 본체 업데이트 확인을 시작한다")
+    func remoteConsentStartsUpdater() {
+        let manager = UpdatesManager()
+        manager.storedPreferencesChanged()
+        #expect(!manager.updater.canCheckForUpdates)
+        Defaults.set(true, forKey: .hasSeenUpdateConsent)
+        manager.storedPreferencesChanged()
+        #expect(manager.updater.canCheckForUpdates)
+    }
+
+    @Test("별도 설정창은 본체 대신 업데이트를 실행하지 않는다")
+    func forwardingProcessDoesNotStartUpdater() {
+        let manager = UpdatesManager()
+        manager.forwardCheck = {}
+        Defaults.set(true, forKey: .hasSeenUpdateConsent)
+        manager.startUpdaterIfNeeded()
+        #expect(!manager.updater.canCheckForUpdates)
+    }
 }
 
 @Suite("Settings link endpoint")

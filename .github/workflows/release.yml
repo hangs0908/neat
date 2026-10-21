@@ -46,6 +46,7 @@ jobs:
             -derivedDataPath build/ReleaseDerivedData \
             -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
             -only-testing:ThawTests/AutomaticUpdatesTests \
+            -only-testing:ThawTests/SettingsProcessAppSideTests \
             CODE_SIGNING_ALLOWED=NO
       - name: 고정 인증서와 업데이트 키 준비
         env:

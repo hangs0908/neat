@@ -52,6 +52,7 @@ jobs:
             -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
             -only-testing:ThawTests/LaunchAtLoginSettingTests \
             -only-testing:ThawTests/AutomaticUpdatesTests \
+            -only-testing:ThawTests/SettingsProcessAppSideTests \
             -only-testing:ThawTests/ThawBarOutsideClickTests \
             -only-testing:ThawTests/LayoutBarKeyboardTests \
             CODE_SIGNING_ALLOWED=NO

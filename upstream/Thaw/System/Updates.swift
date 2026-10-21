@@ -165,7 +165,7 @@ final class UpdatesManager: NSObject {
     }
 
     func startUpdaterIfNeeded() {
-        guard Constants.supportsSparkleUpdates else {
+        guard Constants.supportsSparkleUpdates, forwardCheck == nil else {
             return
         }
         guard !hasStartedUpdater else {
@@ -182,6 +182,9 @@ final class UpdatesManager: NSObject {
     /// The settings process may have changed Sparkle's stored preferences. Sparkle reads
     /// them from the defaults, and a reset schedules the next check by them.
     func storedPreferencesChanged() {
+        if Defaults.bool(forKey: .hasSeenUpdateConsent) {
+            startUpdaterIfNeeded()
+        }
         guard hasStartedUpdater else { return }
         withMutation(keyPath: \.automaticallyChecksForUpdates) {
             // Sparkle already holds the new value; observers only need to hear that it changed.
