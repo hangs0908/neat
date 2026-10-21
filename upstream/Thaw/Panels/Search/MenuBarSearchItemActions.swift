@@ -100,44 +100,16 @@ enum MenuBarSearchItemActions {
 
         // The user chose this from a menu, so it moves in Manual too.
         ExplicitLayoutEdit.task {
-            // Nil once a refusal has explained itself.
-            var committed: Bool? = false
-            // Seat the weights in the destination band before the assertion
-            // flips, or MenuBarAgent republishes the item on its old side of
-            // the divider and the boundary repair drags it back seconds later.
-            // See MenuBarItemManager.seatItemsForSectionTransition(_:to:commit:).
-            await appState.itemManager.seatItemsForSectionTransition(members, to: section) {
-                if let groupMembers {
-                    // A group is indivisible, so one blocked member blocks all of
-                    // them and the batch has to say so rather than half-apply.
-                    if let refusal = appState.menuBarManager.setSection(
-                        section,
-                        items: groupMembers,
-                        atomically: true
-                    ) {
-                        let sourceItems = appState.itemManager.managedItems(for: sourceSection)
-                        appState.layoutFeedback.post(
-                            LayoutBarFeedbackCenter.blockedGroupMove(
-                                groupName: groupDisplayName(for: groupMembers, in: sourceItems, appState: appState),
-                                section: section,
-                                refusal: refusal
-                            )
-                        )
-                        committed = nil
-                        return
-                    }
-                    committed = true
-                } else {
-                    // No setSectionOrder to go with it: a drop carries a position
-                    // and this does not, so the item takes whatever place the
-                    // destination's stored order gives it.
-                    controller.setSection(section, item: item)
-                    committed = true
-                }
+            let committed = await LayoutDropCommit.move(
+                members,
+                from: sourceSection,
+                to: section,
+                asGroup: groupMembers != nil,
+                appState: appState
+            )
+            if let committed {
+                showMoveResult(for: item, to: section, committed: committed, appState: appState)
             }
-
-            await appState.itemManager.cacheItemsRegardless(skipRecentMoveCheck: true)
-            if let committed { showMoveResult(for: item, to: section, committed: committed, appState: appState) }
         }
     }
 
