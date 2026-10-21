@@ -338,7 +338,7 @@ enum LayoutBarKeyboard {
         guard let item = appState.itemManager.managedItem(withTag: tag) else { return }
         if let undoManager {
             let undoTarget = LayoutBarUndoTarget(appState: appState, undoManager: undoManager)
-            undoManager.registerUndo(withTarget: undoTarget) { undoTarget in
+            undoManager.registerUndo(withTarget: undoTarget) { [undoTarget] _ in
                 guard let appState = undoTarget.appState,
                       let undoManager = undoTarget.undoManager
                 else {
@@ -374,7 +374,7 @@ enum LayoutBarKeyboard {
     ) {
         if let undoManager {
             let undoTarget = LayoutBarUndoTarget(appState: appState, undoManager: undoManager)
-            undoManager.registerUndo(withTarget: undoTarget) { undoTarget in
+            undoManager.registerUndo(withTarget: undoTarget) { [undoTarget] _ in
                 guard let appState = undoTarget.appState,
                       let undoManager = undoTarget.undoManager
                 else {
@@ -492,7 +492,7 @@ enum LayoutBarKeyboard {
     }
 }
 
-/// Undo retains its target across both stacks; keep app state here without retaining recycled item views.
+/// 실행 취소 관리자는 대상을 유지하지 않으므로 핸들러가 이 객체를 유지하고 앱 상태는 약하게 참조한다.
 @MainActor
 private final class LayoutBarUndoTarget: NSObject {
     weak var appState: AppState?
