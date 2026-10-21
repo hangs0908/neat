@@ -52,6 +52,19 @@ struct SimpleModeSettingsPane: View {
                     }
                 }
             }
+            ThawSection("업데이트") {
+                @Bindable var updatesManager = appState.updatesManager
+                Toggle("자동으로 업데이트 확인", isOn: $updatesManager.automaticallyChecksForUpdates)
+                    .annotation("새 버전을 알리며, 설치와 재실행은 사용자가 선택합니다.")
+                HStack {
+                    Text("버전 \(Constants.versionString)")
+                    Spacer()
+                    Button("업데이트 확인…") {
+                        updatesManager.checkForUpdates()
+                    }
+                    .disabled(!updatesManager.canCheckForUpdates)
+                }
+            }
             HStack {
                 Text("Neat · Thaw 기반 · GPL-3.0")
                     .font(.caption)

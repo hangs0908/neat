@@ -41,12 +41,8 @@ nonisolated enum Constants {
     /// The app's display name.
     static let displayName = Bundle.main.displayName
 
-    /// Sparkle update checks are available on all supported OS versions.
-    ///
-    /// macOS 27 preview builds use the alpha channel by default; Stable and
-    /// Development remain available when those appcast items apply.
     static var supportsSparkleUpdates: Bool {
-        false
+        true
     }
 
     // swiftlint:enable force_unwrapping

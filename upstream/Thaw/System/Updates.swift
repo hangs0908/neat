@@ -18,8 +18,8 @@ nonisolated enum UpdateChannel: String, CaseIterable, Identifiable {
     /// Alpha builds for macOS 27 (sparkle:channel = alpha).
     case alpha
 
-    /// Stable carries incompatible builds, so offering it would stop updates.
-    static let selectable: [UpdateChannel] = [.beta, .alpha]
+    /// Neat은 단일 공개 채널만 제공한다.
+    static let selectable: [UpdateChannel] = [.stable]
 
     /// Preserve the persisted key so existing channel choices carry over.
     static let defaultsKey = "UpdateChannel"
@@ -77,13 +77,13 @@ final class UpdatesManager: NSObject {
         }
     }
 
-    /// Fall back to Beta for unusable choices, including Stable's incompatible builds.
+    /// 이전 채널 설정이 남아 있어도 Neat 공개 채널만 사용한다.
     static nonisolated func storedUpdateChannel() -> UpdateChannel {
         guard let raw = UserDefaults.standard.string(forKey: UpdateChannel.defaultsKey),
               let channel = UpdateChannel(rawValue: raw),
               UpdateChannel.selectable.contains(channel)
         else {
-            return .beta
+            return .stable
         }
         return channel
     }
@@ -128,14 +128,11 @@ final class UpdatesManager: NSObject {
             return updater.automaticallyDownloadsUpdates
         }
         set {
-            guard Constants.supportsSparkleUpdates else {
+            guard Constants.supportsSparkleUpdates, !newValue else {
                 return
             }
             withMutation(keyPath: \.automaticallyDownloadsUpdates) {
                 updater.automaticallyDownloadsUpdates = newValue
-                if newValue {
-                    Defaults.set(true, forKey: .hasSeenUpdateConsent)
-                }
             }
         }
     }
@@ -146,6 +143,9 @@ final class UpdatesManager: NSObject {
         _ = updaterController
         // Scrub SUFeedURL defaults that could redirect checks away from Info.plist; the delegate also ignores them.
         updater.clearFeedURLFromUserDefaults()
+        // 이전 설정이 남아 있어도 동의 전 확인과 자동 다운로드를 허용하지 않는다.
+        updater.automaticallyChecksForUpdates = Defaults.bool(forKey: .hasSeenUpdateConsent) && updater.automaticallyChecksForUpdates
+        updater.automaticallyDownloadsUpdates = false
 
         // Sparkle's updater is KVO-backed, not @Observable; its publishers
         // mirror into the stored properties Observation can track.
@@ -159,10 +159,13 @@ final class UpdatesManager: NSObject {
                 self?.lastUpdateCheckDate = value
             }
             .store(in: &cancellables)
+        if Defaults.bool(forKey: .hasSeenUpdateConsent) {
+            startUpdaterIfNeeded()
+        }
     }
 
     func startUpdaterIfNeeded() {
-        guard Constants.supportsSparkleUpdates else {
+        guard Constants.supportsSparkleUpdates, forwardCheck == nil else {
             return
         }
         guard !hasStartedUpdater else {
@@ -179,6 +182,9 @@ final class UpdatesManager: NSObject {
     /// The settings process may have changed Sparkle's stored preferences. Sparkle reads
     /// them from the defaults, and a reset schedules the next check by them.
     func storedPreferencesChanged() {
+        if Defaults.bool(forKey: .hasSeenUpdateConsent) {
+            startUpdaterIfNeeded()
+        }
         guard hasStartedUpdater else { return }
         withMutation(keyPath: \.automaticallyChecksForUpdates) {
             // Sparkle already holds the new value; observers only need to hear that it changed.
@@ -200,7 +206,7 @@ final class UpdatesManager: NSObject {
         #if DEBUG
             // Checking for updates hangs in debug mode, except against a local
             // rehearsal feed (see feedURLString(for:)).
-            guard UserDefaults.standard.string(forKey: "ThawDebugFeedURL") != nil else {
+            guard UserDefaults.standard.string(forKey: "NeatDebugFeedURL") != nil else {
                 let alert = NSAlert()
                 alert.messageText = String(localized: "Checking for updates is not supported in debug mode.")
                 alert.runModal()
@@ -213,7 +219,6 @@ final class UpdatesManager: NSObject {
         startUpdaterIfNeeded()
         // Activate the app in case an alert needs to be displayed.
         appState.activate(withPolicy: .regular)
-        appState.openWindow(.settings)
         updater.checkForUpdates()
     }
 }
@@ -231,7 +236,7 @@ extension UpdatesManager: SPUUpdaterDelegate {
         #if DEBUG
             // Lets a Debug build rehearse the update flow against a local
             // appcast. Release builds never read it.
-            if let debugFeed = UserDefaults.standard.string(forKey: "ThawDebugFeedURL") {
+            if let debugFeed = UserDefaults.standard.string(forKey: "NeatDebugFeedURL") {
                 return debugFeed
             }
         #endif
@@ -265,15 +270,12 @@ extension UpdatesManager: @MainActor SPUStandardUserDriverDelegate {
     }
 
     func standardUserDriverWillHandleShowingUpdate(
-        _ handleShowingUpdate: Bool,
+        _: Bool,
         forUpdate update: SUAppcastItem,
         state: SPUUserUpdateState
     ) {
         guard let appState else {
             return
-        }
-        if handleShowingUpdate {
-            showNotes(for: update)
         }
         if !state.userInitiated {
             appState.userNotificationManager.addRequest(
@@ -284,19 +286,10 @@ extension UpdatesManager: @MainActor SPUStandardUserDriverDelegate {
         }
     }
 
-    func standardUserDriverDidReceiveUserAttention(forUpdate update: SUAppcastItem) {
+    func standardUserDriverDidReceiveUserAttention(forUpdate _: SUAppcastItem) {
         guard let appState else {
             return
         }
         appState.userNotificationManager.removeDeliveredNotifications(with: [.updateCheck])
-        showNotes(for: update)
-    }
-
-    /// Opens What's New on the update's notes beside Sparkle's install window,
-    /// which shows none of its own (SUShowReleaseNotes is off).
-    private func showNotes(for update: SUAppcastItem) {
-        guard let appState else { return }
-        appState.pendingUpdateVersion = update.displayVersionString
-        appState.openWindow(.whatsNew)
     }
 }

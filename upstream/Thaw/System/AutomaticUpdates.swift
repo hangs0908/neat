@@ -10,14 +10,10 @@ import SwiftUI
 /// The updater's two switches as the one choice the settings panes show:
 /// downloading implies checking.
 enum AutomaticUpdates: Hashable, CaseIterable, Identifiable {
-    case off, check, download
+    case off, check
 
-    init(checks: Bool, downloads: Bool) {
-        if !checks {
-            self = .off
-        } else {
-            self = downloads ? .download : .check
-        }
+    init(checks: Bool, downloads _: Bool) {
+        self = checks ? .check : .off
     }
 
     var id: Self {
@@ -29,14 +25,13 @@ enum AutomaticUpdates: Hashable, CaseIterable, Identifiable {
     }
 
     var downloads: Bool {
-        self == .download
+        false
     }
 
     var localized: LocalizedStringKey {
         switch self {
         case .off: "Off"
         case .check: "Check only"
-        case .download: "Check and download"
         }
     }
 }

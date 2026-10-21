@@ -50,16 +50,18 @@ struct SettingsWindow: Scene {
                 generalSettings: appState.settings.general
             )
             .sheet(isPresented: $appState.isUpdateConsentPresented) {
-                UpdateConsentSheet { autoDownload in
+                UpdateConsentSheet {
                     appState.isUpdateConsentPresented = false
                     Defaults.set(true, forKey: .hasSeenUpdateConsent)
                     appState.updatesManager.automaticallyChecksForUpdates = true
-                    appState.updatesManager.automaticallyDownloadsUpdates = autoDownload
+                    appState.updatesManager.automaticallyDownloadsUpdates = false
                     appState.startUpdaterIfNeeded()
                 } onDisable: {
                     appState.isUpdateConsentPresented = false
                     Defaults.set(true, forKey: .hasSeenUpdateConsent)
                     appState.updatesManager.automaticallyChecksForUpdates = false
+                    appState.updatesManager.automaticallyDownloadsUpdates = false
+                    appState.startUpdaterIfNeeded()
                 }
             }
         }

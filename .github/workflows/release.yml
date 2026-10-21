@@ -1,0 +1,73 @@
+name: Neat 릴리스 초안
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  draft:
+    runs-on: xcode-27
+    timeout-minutes: 40
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: 승인된 main의 버전 태그 확인
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          git merge-base --is-ancestor HEAD origin/main
+          echo "RELEASE_VERSION=${RELEASE_TAG#v}" >> "$GITHUB_ENV"
+          echo "BUILD_NUMBER=$((GITHUB_RUN_NUMBER + 115))" >> "$GITHUB_ENV"
+      - name: 지정 버전 SwiftLint 설치
+        run: |
+          sh upstream/scripts/install-swiftlint.sh "$RUNNER_TEMP/neat-tools"
+          echo "$RUNNER_TEMP/neat-tools" >> "$GITHUB_PATH"
+      - name: 정적 검사 및 자동 테스트
+        run: |
+          sh upstream/scripts/lint.sh --strict
+          ./test.command
+          python3 scripts/test-release-metadata.py
+          xcodebuild test -project upstream/Thaw.xcodeproj -scheme Thaw \
+            -configuration Debug -destination 'platform=macOS' \
+            -derivedDataPath build/ReleaseDerivedData \
+            -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
+            CODE_SIGNING_ALLOWED=NO
+      - name: 고정 인증서와 업데이트 키 준비
+        env:
+          SIGNING_P12: ${{ secrets.NEAT_SIGNING_P12_BASE64 }}
+          SPARKLE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          umask 077
+          [[ -n "$SIGNING_P12" && -n "$SPARKLE_KEY" ]]
+          printf '%s' "$SIGNING_P12" | base64 --decode > "$RUNNER_TEMP/neat-signing.p12"
+          printf '%s' "$SPARKLE_KEY" > "$RUNNER_TEMP/neat-sparkle.key"
+      - name: arm64 배포 파일 빌드·서명
+        env:
+          NEAT_SIGNING_P12: ${{ runner.temp }}/neat-signing.p12
+          NEAT_SIGNING_PASSWORD: ${{ secrets.NEAT_SIGNING_PASSWORD }}
+          SPARKLE_KEY_FILE: ${{ runner.temp }}/neat-sparkle.key
+        run: bash scripts/build-release.sh
+      - name: 확인 전에는 공개하지 않는 릴리스 초안 생성
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" --verify-tag --draft \
+            --title "Neat $RELEASE_VERSION" --generate-notes \
+            "build/release/Neat-$RELEASE_VERSION.zip" \
+            build/release/appcast.xml build/release/neat.rb
+      - name: 비밀 파일 정리
+        if: always()
+        run: rm -f "$RUNNER_TEMP/neat-signing.p12" "$RUNNER_TEMP/neat-sparkle.key"

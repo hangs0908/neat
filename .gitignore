@@ -3,3 +3,4 @@
 .swiftpm/
 .tools/
 build/
+__pycache__/

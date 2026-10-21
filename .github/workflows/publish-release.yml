@@ -1,0 +1,47 @@
+name: 공개 릴리스의 Homebrew 갱신
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-tap
+  cancel-in-progress: false
+
+jobs:
+  tap-pr:
+    if: ${{ !github.event.release.prerelease }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: main
+      - name: 공개 배포 파일 확인 및 cask 생성
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          [[ "$(gh api repos/hangs0908/neat/releases/latest --jq .tag_name)" == "$RELEASE_TAG" ]]
+          mkdir -p build/published Casks
+          gh release download "$RELEASE_TAG" --pattern 'Neat-*.zip' --pattern appcast.xml --dir build/published
+          python3 scripts/release-metadata.py published "$RELEASE_TAG" build/published Casks/neat.rb
+      - name: main에 직접 쓰지 않고 검토용 PR 생성
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          git switch -c "release/homebrew-$RELEASE_TAG"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add Casks/neat.rb
+          git commit -s -m "chore: Homebrew 배포 버전 $RELEASE_TAG 갱신"
+          git push origin "release/homebrew-$RELEASE_TAG"
+          gh pr create --base main --title "chore: Homebrew $RELEASE_TAG 배포" \
+            --body '공개 릴리스의 다운로드 파일과 앱캐스트를 확인해 cask를 갱신합니다. 병합 전 설치 검증과 승인이 필요합니다.'

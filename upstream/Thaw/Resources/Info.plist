@@ -2,6 +2,16 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>SUFeedURL</key>
+	<string>https://github.com/hangs0908/neat/releases/latest/download/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>6rQKE8UfkSfRDt7L1Qc0MMrIaMdRbCwyyBAEogQzxIE=</string>
+	<key>SUEnableAutomaticChecks</key>
+	<false/>
+	<key>SUAutomaticallyUpdate</key>
+	<false/>
+	<key>SUAllowsAutomaticUpdates</key>
+	<false/>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -19,7 +29,7 @@
 		<string>1</string>
 	</dict>
 	<key>ThawChangelogURL</key>
-	<string>https://raw.githubusercontent.com/thaw-app/Thaw/development/CHANGELOG.md</string>
+	<string>https://raw.githubusercontent.com/hangs0908/neat/main/CHANGELOG.md</string>
 	<key>ThawDiscordURL</key>
 	<string>https://discord.gg/KDfWjWDnR4</string>
 	<key>ThawDonateURL</key>
@@ -27,7 +37,7 @@
 	<key>ThawMenuBarItemSpacingExecutableURI</key>
 	<string>file:///usr/bin/env</string>
 	<key>ThawRepositoryURL</key>
-	<string>https://github.com/thaw-app/Thaw</string>
+	<string>https://github.com/hangs0908/neat</string>
 	<key>ThawSkyLightFrameworkPath</key>
 	<string>/System/Library/PrivateFrameworks/SkyLight.framework/SkyLight</string>
 </dict>

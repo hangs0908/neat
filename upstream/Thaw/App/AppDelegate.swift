@@ -21,10 +21,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let notchPanelController = NotchPanelController()
 
     #if DEBUG
-        /// Check both Xcode flags because previews may use either the preview or playground environment.
-        private var isRunningForPreviews: Bool {
+        /// 테스트는 실제 SwiftUI 렌더링을 유지하면서 앱의 외부 초기화만 생략한다.
+        private var isRunningForPreviewsOrTests: Bool {
             let environment = ProcessInfo.processInfo.environment
-            return environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" || environment["XCODE_RUNNING_FOR_PLAYGROUNDS"] == "1"
+            return environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" || environment["XCODE_RUNNING_FOR_PLAYGROUNDS"] == "1" || ["XCTestConfigurationFilePath", "XCTestBundlePath", "XCTestSessionIdentifier"].contains { environment[$0] != nil }
         }
     #endif
 
@@ -33,8 +33,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillFinishLaunching(_: Notification) {
         LiveApp.register(self)
         #if DEBUG
-            // Don't perform setup if running as a preview.
-            if isRunningForPreviews {
+            // 미리보기와 테스트에서는 실제 앱 초기화를 생략한다.
+            if isRunningForPreviewsOrTests {
                 return
             }
         #endif
@@ -67,8 +67,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Bridging.setConnectionProperty(true, forKey: "SetsCursorInBackground")
 
         #if DEBUG
-            // Don't perform setup if running as a preview.
-            if isRunningForPreviews {
+            // 미리보기와 테스트에서는 실제 앱 초기화를 생략한다.
+            if isRunningForPreviewsOrTests {
                 return
             }
         #endif
@@ -97,14 +97,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             currentOnboardingVersion: Constants.currentOnboardingVersion
         )
 
-        // Never show onboarding and What's New together; onboarding already includes release notes.
+        // 업그레이드에서는 원본 Thaw 새 소식 창을 자동으로 열지 않는다.
         if ReducedModeController.shared.isRunning {
             // The reduced mode has no windows of its own and asks for nothing.
         } else if stage != .none {
             appState.openWindow(.permissions)
         } else {
-            // Upgrade notes appear once per version, only outside the onboarding/permissions path.
-            appState.presentWhatsNewForUpgradeIfNeeded()
+            Defaults.set(Constants.versionString, forKey: .lastWhatsNewVersion)
         }
     }
 

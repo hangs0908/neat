@@ -68,6 +68,39 @@ final class SettingsProcessAppSideTests {
         Defaults.set(true, forKey: .settingsInOwnProcess)
         #expect(SettingsProcessHost.isEnabledInDefaults() == !SettingsProcessApp.isRequested)
     }
+
+    @Test("별도 설정창의 동의가 본체 업데이트 확인을 시작한다")
+    func remoteConsentStartsUpdater() {
+        let manager = UpdatesManager()
+        manager.storedPreferencesChanged()
+        #expect(!manager.updater.canCheckForUpdates)
+        Defaults.set(true, forKey: .hasSeenUpdateConsent)
+        manager.storedPreferencesChanged()
+        #expect(manager.updater.canCheckForUpdates)
+    }
+
+    @Test("별도 설정창은 본체 대신 업데이트를 실행하지 않는다")
+    func forwardingProcessDoesNotStartUpdater() {
+        let manager = UpdatesManager()
+        manager.forwardCheck = {}
+        Defaults.set(true, forKey: .hasSeenUpdateConsent)
+        manager.startUpdaterIfNeeded()
+        #expect(!manager.updater.canCheckForUpdates)
+    }
+
+    @Test("메뉴의 수동 확인 명령을 연결된 업데이트 관리자로 한 번 전달한다")
+    func menuForwardsManualUpdateCheck() throws {
+        let appState = AppState()
+        var checkCount = 0
+        appState.updatesManager.forwardCheck = { checkCount += 1 }
+        let controller = ControlItemMenuController(appState: appState)
+        let menu = controller.makeMenu()
+        let item = try #require(menu.items.first { $0.title == "업데이트 확인…" })
+        #expect(item.isEnabled)
+        #expect(item.target === controller)
+        menu.performActionForItem(at: menu.index(of: item))
+        #expect(checkCount == 1)
+    }
 }
 
 @Suite("Settings link endpoint")
