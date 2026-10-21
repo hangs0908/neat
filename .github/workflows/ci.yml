@@ -19,8 +19,6 @@ jobs:
     name: 빌드 및 테스트
     runs-on: xcode-27
     timeout-minutes: 30
-    env:
-      TEST_RUNNER_XCODE_RUNNING_FOR_PREVIEWS: "1"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -44,15 +42,10 @@ jobs:
             -derivedDataPath build/DerivedData \
             -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
             CODE_SIGNING_ALLOWED=NO
-      - name: 네이티브 회귀 테스트
+      - name: 전체 네이티브 회귀 테스트
         run: |
           xcodebuild test -project upstream/Thaw.xcodeproj -scheme Thaw \
             -configuration Debug -destination 'platform=macOS' \
             -derivedDataPath build/DerivedData \
             -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
-            -only-testing:ThawTests/LaunchAtLoginSettingTests \
-            -only-testing:ThawTests/AutomaticUpdatesTests \
-            -only-testing:ThawTests/SettingsProcessAppSideTests \
-            -only-testing:ThawTests/ThawBarOutsideClickTests \
-            -only-testing:ThawTests/LayoutBarKeyboardTests \
             CODE_SIGNING_ALLOWED=NO

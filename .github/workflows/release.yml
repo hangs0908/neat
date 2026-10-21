@@ -35,8 +35,6 @@ jobs:
           sh upstream/scripts/install-swiftlint.sh "$RUNNER_TEMP/neat-tools"
           echo "$RUNNER_TEMP/neat-tools" >> "$GITHUB_PATH"
       - name: 정적 검사 및 자동 테스트
-        env:
-          TEST_RUNNER_XCODE_RUNNING_FOR_PREVIEWS: "1"
         run: |
           sh upstream/scripts/lint.sh --strict
           ./test.command
@@ -45,8 +43,6 @@ jobs:
             -configuration Debug -destination 'platform=macOS' \
             -derivedDataPath build/ReleaseDerivedData \
             -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates \
-            -only-testing:ThawTests/AutomaticUpdatesTests \
-            -only-testing:ThawTests/SettingsProcessAppSideTests \
             CODE_SIGNING_ALLOWED=NO
       - name: 고정 인증서와 업데이트 키 준비
         env:
