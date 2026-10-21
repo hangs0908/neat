@@ -87,6 +87,20 @@ final class SettingsProcessAppSideTests {
         manager.startUpdaterIfNeeded()
         #expect(!manager.updater.canCheckForUpdates)
     }
+
+    @Test("메뉴의 수동 확인 명령을 연결된 업데이트 관리자로 한 번 전달한다")
+    func menuForwardsManualUpdateCheck() throws {
+        let appState = AppState()
+        var checkCount = 0
+        appState.updatesManager.forwardCheck = { checkCount += 1 }
+        let controller = ControlItemMenuController(appState: appState)
+        let menu = controller.makeMenu()
+        let item = try #require(menu.items.first { $0.title == "업데이트 확인…" })
+        #expect(item.isEnabled)
+        #expect(item.target === controller)
+        menu.performActionForItem(at: menu.index(of: item))
+        #expect(checkCount == 1)
+    }
 }
 
 @Suite("Settings link endpoint")
