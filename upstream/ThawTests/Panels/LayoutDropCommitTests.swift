@@ -78,4 +78,44 @@ struct LayoutDropCommitTests {
         let group = [World.item("One"), World.item("Two")]
         #expect(!LayoutDropCommit.refuses(drop(group, from: .visible, to: .hidden), appState: world.appState))
     }
+
+    @Test(arguments: [false, true])
+    func cancelledSectionMoveDoesNotRecordASuccess(isBatch: Bool) async {
+        let world = World()
+        let items = [World.item(.visibleControlItem), World.item(.hiddenControlItem)]
+        let drop = LayoutDropCommit.Drop(
+            items: items,
+            source: .visible,
+            target: .hidden,
+            previousTargetOrder: [],
+            targetOrder: items,
+            isBatch: isBatch
+        )
+        let task = Task { @MainActor in
+            withUnsafeCurrentTask { $0?.cancel() }
+            return await LayoutDropCommit.perform(drop, appState: world.appState)
+        }
+
+        #expect(await task.value == false)
+        #expect(world.appState.layoutFeedback.refusal == nil)
+    }
+
+    @Test(arguments: [false, true])
+    func cancelledMenuMoveDoesNotReportAGroupRefusal(asGroup: Bool) async {
+        let world = World()
+        let items = [World.item(.visibleControlItem)]
+        let task = Task { @MainActor in
+            withUnsafeCurrentTask { $0?.cancel() }
+            return await LayoutDropCommit.move(
+                items,
+                from: .visible,
+                to: .hidden,
+                asGroup: asGroup,
+                appState: world.appState
+            )
+        }
+
+        #expect(await task.value == false)
+        #expect(world.appState.layoutFeedback.refusal == nil)
+    }
 }
