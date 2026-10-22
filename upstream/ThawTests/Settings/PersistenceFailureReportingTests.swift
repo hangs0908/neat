@@ -104,7 +104,8 @@ struct PersistenceFailureReportingTests {
         try withScratchDefaults { _ in
             let manager = DisplaySettingsManager()
 
-            manager.globalConfiguration = .defaultConfiguration.withUseThawBar(true)
+            let configuration = manager.globalConfiguration
+            manager.globalConfiguration = configuration.withUseThawBar(!configuration.useThawBar)
 
             #expect(manager.lastPersistenceFailure == nil)
             #expect(Defaults.data(forKey: .globalDisplayConfiguration) != nil)
