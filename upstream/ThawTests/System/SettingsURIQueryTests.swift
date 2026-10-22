@@ -36,7 +36,12 @@ extension SettingsURIResponseSuites {
                     #expect(response["requestId"] as? String == "query-1")
                     #expect(response["status"] as? String == "success")
                     #expect(response["key"] as? String == canonicalKey)
-                    let data = try #require(response["data"] as? [String: Any])
+                    var data = try #require(response["data"] as? [String: Any])
+                    if canonicalKey == "thawBarLocation" {
+                        // 목록 보완을 막지 않도록 요청한 위치의 매핑만 검증한다.
+                        let values = try #require(data.removeValue(forKey: "validValues") as? [String: Int])
+                        #expect(values["mousePointer"] == 1)
+                    }
                     let expected: [String: Any] = switch canonicalKey {
                     case "showOnHover": ["value": true, "type": "boolean"]
                     case "rehideInterval": ["value": 22.0, "type": "double", "range": ["min": 1, "max": 300]]
@@ -44,7 +49,7 @@ extension SettingsURIResponseSuites {
                     case "useThawBar": ["value": false, "type": "boolean"]
                     case "alwaysShowHiddenItems": ["value": true, "type": "boolean"]
                     case "gridColumns": ["value": 7, "type": "integer", "range": ["min": 2, "max": 10]]
-                    case "thawBarLocation": ["value": "mousePointer", "rawValue": 1, "type": "enum", "validValues": ["dynamic": 0, "mousePointer": 1, "thawIcon": 2]]
+                    case "thawBarLocation": ["value": "mousePointer", "rawValue": 1, "type": "enum"]
                     case "thawBarLayout": ["value": "grid", "rawValue": 2, "type": "enum", "validValues": ["horizontal": 0, "vertical": 1, "grid": 2]]
                     default: [:]
                     }
