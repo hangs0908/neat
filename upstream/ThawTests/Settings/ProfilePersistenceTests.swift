@@ -5,6 +5,39 @@ import Testing
 @MainActor
 @Suite("프로필 파일 저장", .serialized)
 struct ProfilePersistenceTests {
+    @Test("목록 저장이 실패한 이름 변경은 원본 바이트와 메모리를 보존하고 재시도할 수 있다")
+    func failedRenamePreservesProfileAndCanRetry() throws {
+        try withFixture { manager, directory, original in
+            let profileURL = directory.appendingPathComponent("\(original.id).json")
+            let manifestURL = directory.appendingPathComponent("profiles.json")
+            let originalData = try Data(contentsOf: profileURL)
+            let manifestData = try Data(contentsOf: manifestURL)
+            let metadata = manager.profiles
+            manager.activeProfileID = original.id
+            try FileManager.default.removeItem(at: manifestURL)
+            try FileManager.default.createDirectory(at: manifestURL, withIntermediateDirectories: false)
+
+            #expect(throws: (any Error).self) {
+                try manager.renameProfile(id: original.id, to: "실패한 변경")
+            }
+
+            #expect(try Data(contentsOf: profileURL) == originalData)
+            #expect(manager.profiles == metadata)
+            #expect(manager.activeProfileID == original.id)
+            try FileManager.default.removeItem(at: manifestURL)
+            try manifestData.write(to: manifestURL)
+            let reloaded = ProfileManager(profilesDirectory: directory)
+            #expect(reloaded.profiles == metadata)
+            #expect(try encoded(reloaded.loadProfile(id: original.id)) == encoded(original))
+
+            try manager.renameProfile(id: original.id, to: "재시도 성공")
+
+            let retried = ProfileManager(profilesDirectory: directory)
+            #expect(retried.profiles.first?.name == "재시도 성공")
+            #expect(try retried.loadProfile(id: original.id).name == "재시도 성공")
+        }
+    }
+
     @Test("이름을 바꾼 뒤 다시 읽어도 식별자와 설정 및 연결 정보가 유지된다")
     func renamePersistsWithoutChangingContent() throws {
         try withFixture { manager, directory, original in
@@ -138,7 +171,7 @@ struct ProfilePersistenceTests {
         }
     }
 
-    private func withFixture(_ body: (ProfileManager, URL, Profile) throws -> Void) throws {
+    func withFixture(_ body: (ProfileManager, URL, Profile) throws -> Void) throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("NeatProfilePersistenceTests.\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -194,14 +227,14 @@ struct ProfilePersistenceTests {
         try body(ProfileManager(profilesDirectory: directory), directory, original)
     }
 
-    private func encoded(_ value: some Encodable) throws -> Data {
+    func encoded(_ value: some Encodable) throws -> Data {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.sortedKeys]
         return try encoder.encode(value)
     }
 
-    private func encoded(contentOf profile: Profile, using original: Profile) throws -> Data {
+    func encoded(contentOf profile: Profile, using original: Profile) throws -> Data {
         try encoded(Profile(
             id: original.id,
             name: original.name,
