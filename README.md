@@ -12,6 +12,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/macOS-27%2B-24292f?style=flat-square&logo=apple&logoColor=white" alt="macOS 27 이상">
   <img src="https://img.shields.io/badge/빌드-로컬-64748b?style=flat-square" alt="로컬 빌드">
+  <a href="https://sonarcloud.io/component_measures?id=hangs0908_neat&amp;metric=coverage"><picture><source media="(prefers-color-scheme: dark)" srcset="https://www.shieldcn.dev/sonar/coverage/hangs0908_neat.svg?variant=outline&amp;size=xs&amp;mode=dark&amp;font=geist&amp;logo=sonarqubecloud"><img alt="Neat 테스트 커버리지" src="https://www.shieldcn.dev/sonar/coverage/hangs0908_neat.svg?variant=outline&amp;size=xs&amp;mode=light&amp;font=geist&amp;logo=sonarqubecloud"></picture></a>
   <a href="upstream/LICENSE"><img src="https://img.shields.io/badge/라이선스-GPL--3.0-64748b?style=flat-square" alt="GPL-3.0 라이선스"></a>
 </p>
 
@@ -118,6 +119,8 @@ Neat의 번들 ID는 `local.hangjin.Neat`이며, 기존 Thaw의 설치나 설정
 ```
 
 로컬 서명 빌드 흐름의 회귀 검사와 Neat 정책 테스트를 실행합니다. 기본값, 5초 유휴 판정, 조작 시 타이머 초기화, 로그인 최초 초기화 조건, 독립 프로필 경로를 검사합니다. 정책 테스트는 Command Line Tools 환경에서도 실행할 수 있습니다.
+
+PR과 `main`에서는 GitHub Actions로 앱 테스트와 커버리지를 측정합니다. SonarQube Cloud 연결 절차와 배지의 측정 범위는 [커버리지 안내](docs/coverage.md)를 참고하세요.
 
 전체 앱의 네이티브 테스트에는 Xcode가 필요합니다. 실제 메뉴 막대나 권한에 영향을 주는 테스트는 실행 전에 내용을 확인하세요. 선택한 회귀 테스트의 재현 명령과 기존 검사 결과, 실기기 미검증 항목은 [검증 기록](docs/verification.md)에 정리되어 있습니다.
 
