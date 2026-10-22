@@ -80,7 +80,7 @@ public enum AXWire {
         let size = Int(length)
         guard size > 0 else { throw WireError.empty }
         guard size <= maximumFrameBytes else { throw WireError.tooLarge(size) }
-        guard let payload = try readExactly(size, from: handle, deadline: deadline) else {
+        guard let payload = try readExactly(size, from: handle, deadline: deadline), payload.count == size else {
             throw WireError.truncated
         }
         return try decode(type, from: payload)
