@@ -12,7 +12,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/macOS-27%2B-24292f?style=flat-square&logo=apple&logoColor=white" alt="macOS 27 이상">
   <img src="https://img.shields.io/badge/빌드-로컬-64748b?style=flat-square" alt="로컬 빌드">
-  <a href="https://sonarcloud.io/component_measures?id=hangs0908_neat&amp;metric=coverage"><picture><source media="(prefers-color-scheme: dark)" srcset="https://www.shieldcn.dev/sonar/coverage/hangs0908_neat.svg?variant=outline&amp;size=xs&amp;mode=dark&amp;font=geist&amp;logo=sonarqubecloud"><img alt="Neat 테스트 커버리지" src="https://www.shieldcn.dev/sonar/coverage/hangs0908_neat.svg?variant=outline&amp;size=xs&amp;mode=light&amp;font=geist&amp;logo=sonarqubecloud"></picture></a>
+  <a href="https://sonarcloud.io/component_measures?id=hangs0908_neat&amp;metric=coverage"><picture><source media="(prefers-color-scheme: dark)" srcset="https://www.shieldcn.dev/sonar/coverage/hangs0908_neat.svg?server=sonarcloud.io%3A443&amp;variant=outline&amp;size=xs&amp;mode=dark&amp;font=geist&amp;logo=sonarqubecloud"><img alt="Neat 테스트 커버리지" src="https://www.shieldcn.dev/sonar/coverage/hangs0908_neat.svg?server=sonarcloud.io%3A443&amp;variant=outline&amp;size=xs&amp;mode=light&amp;font=geist&amp;logo=sonarqubecloud"></picture></a>
   <a href="upstream/LICENSE"><img src="https://img.shields.io/badge/라이선스-GPL--3.0-64748b?style=flat-square" alt="GPL-3.0 라이선스"></a>
 </p>
 
