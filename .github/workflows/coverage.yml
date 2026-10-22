@@ -14,6 +14,53 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  package-tests:
+    name: 패키지 테스트 (${{ matrix.package }})
+    runs-on: xcode-27
+    timeout-minutes: 20
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        package: [MenuBarModel, ThawConcurrency, ThawLayout, ThawAX, ThawCapture, ThawUI]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: 패키지 테스트와 커버리지 측정
+        run: |
+          swift test --package-path "upstream/${{ matrix.package }}" \
+            --scratch-path "build/PackageTests/${{ matrix.package }}" \
+            --disable-xctest --enable-code-coverage --skip-update
+
+      - name: UI 의존성 revision 확인
+        if: matrix.package == 'ThawUI'
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          def revision(path):
+              pins = json.loads(Path(path).read_text())["pins"]
+              return next(pin["state"]["revision"] for pin in pins if pin["identity"] == "compactslider")
+
+          app = revision("upstream/Thaw.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved")
+          package = revision("upstream/ThawUI/Package.resolved")
+          if app != package:
+              raise SystemExit("앱과 패키지의 CompactSlider revision이 다릅니다")
+          PY
+
+      - name: 패키지 커버리지 보고서 보관
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: package-coverage-${{ matrix.package }}
+          path: build/PackageTests/${{ matrix.package }}/**/codecov/*.json
+          if-no-files-found: error
+          retention-days: 7
+
   coverage:
     runs-on: xcode-27
     timeout-minutes: 45
