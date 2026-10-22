@@ -45,9 +45,28 @@ struct HookRunnerTests {
 
     @Test
     func `a script that outlives its timeout is reported as timed out, not as failed to run`() async throws {
-        let url = try script("sleep 30")
-        defer { try? FileManager.default.removeItem(at: url) }
-        let started = ContinuousClock.now
+        let url = try script("echo $$ > \"$0.pid\"\nexec sleep 30")
+        let pidFile = url.appendingPathExtension("pid")
+        defer {
+            try? FileManager.default.removeItem(at: url)
+            try? FileManager.default.removeItem(at: pidFile)
+        }
+        // 메인 액터의 재개 대기와 분리해 실제 훅 프로세스의 종료를 관찰한다.
+        let stopped = Task.detached {
+            let deadline = ContinuousClock.now.advanced(by: .seconds(10))
+            while !Task.isCancelled {
+                if let text = try? String(contentsOf: pidFile, encoding: .utf8),
+                   let pid = Int32(text.trimmingCharacters(in: .whitespacesAndNewlines)), pid > 0,
+                   kill(pid, 0) == -1, errno == ESRCH
+                {
+                    return true
+                }
+                guard ContinuousClock.now < deadline else { return false }
+                try await Task.sleep(for: .milliseconds(20))
+            }
+            return false
+        }
+        defer { stopped.cancel() }
 
         do {
             _ = try await HookRunner.run(HookScript(path: url.path, timeoutSeconds: 1), context: Self.context)
@@ -55,7 +74,7 @@ struct HookRunnerTests {
         } catch let HookRunner.HookError.timedOut(after: seconds) {
             #expect(seconds == 1)
         }
-        #expect(ContinuousClock.now - started < .seconds(10), "The child must be stopped, not waited for")
+        #expect(try await stopped.value, "훅 프로세스는 정상 종료를 기다리지 않고 제한 시간 안에 중단되어야 한다")
     }
 
     @Test
