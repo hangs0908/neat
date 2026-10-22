@@ -138,7 +138,7 @@ struct ProfilePersistenceTests {
         }
     }
 
-    private func withFixture(_ body: (ProfileManager, URL, Profile) throws -> Void) throws {
+    func withFixture(_ body: (ProfileManager, URL, Profile) throws -> Void) throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("NeatProfilePersistenceTests.\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -194,14 +194,14 @@ struct ProfilePersistenceTests {
         try body(ProfileManager(profilesDirectory: directory), directory, original)
     }
 
-    private func encoded(_ value: some Encodable) throws -> Data {
+    func encoded(_ value: some Encodable) throws -> Data {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.sortedKeys]
         return try encoder.encode(value)
     }
 
-    private func encoded(contentOf profile: Profile, using original: Profile) throws -> Data {
+    func encoded(contentOf profile: Profile, using original: Profile) throws -> Data {
         try encoded(Profile(
             id: original.id,
             name: original.name,
