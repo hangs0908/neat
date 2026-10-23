@@ -31,7 +31,7 @@
 
 ```sh
 env DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
-  PATH="$PWD/.tools/bin:$PATH" TEST_RUNNER_XCODE_RUNNING_FOR_PREVIEWS=1 \
+  PATH="$PWD/.tools/bin:$PATH" TEST_RUNNER_XCODE_RUNNING_FOR_PLAYGROUNDS=1 \
   xcodebuild test -project upstream/Thaw.xcodeproj -scheme Thaw \
   -configuration Debug -destination 'platform=macOS' \
   -derivedDataPath build/DerivedData \
@@ -39,6 +39,8 @@ env DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
   -only-testing:ThawTests/LaunchAtLoginSettingTests \
   -only-testing:ThawTests/ThawBarOutsideClickTests CODE_SIGNING_ALLOWED=NO
 ```
+
+현재 재현 명령은 앱 자동 시작을 억제하면서 SwiftUI 렌더링 검사를 유지하도록 `TEST_RUNNER_XCODE_RUNNING_FOR_PLAYGROUNDS=1`을 사용한다. 위 과거 검사에 사용한 미리보기 플래그는 설정 행 높이와 아이콘 이미지 렌더링 검사를 실패시킬 수 있어 사용하지 않는다. 테스트 언어를 고정하려면 `-testLanguage ko -testRegion KR` 또는 `-testLanguage en -testRegion US`를 추가한다.
 
 ## 독립 코드 리뷰
 
