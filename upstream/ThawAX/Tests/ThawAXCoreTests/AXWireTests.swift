@@ -10,6 +10,21 @@ import Testing
 @testable import ThawAXCore
 
 struct AXWireTests {
+    @Test("유효한 JSON이어도 선언된 본문 길이에 미달하면 잘린 프레임 오류다")
+    func truncatedValidPayloadIsRejected() throws {
+        let pipe = Pipe()
+        defer {
+            try? pipe.fileHandleForWriting.close()
+            try? pipe.fileHandleForReading.close()
+        }
+        try pipe.fileHandleForWriting.write(contentsOf: Data([0, 0, 0, 2, 49]))
+        try pipe.fileHandleForWriting.close()
+
+        #expect(throws: AXWire.WireError.truncated) {
+            _ = try AXWire.read(Int.self, from: pipe.fileHandleForReading, timeoutSeconds: 1)
+        }
+    }
+
     @Test
     func `request round-trips through framing`() throws {
         let request = AXEnumerateRequest(displayID: 1, deadlineSeconds: 2.5)
