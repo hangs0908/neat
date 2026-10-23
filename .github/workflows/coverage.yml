@@ -94,6 +94,13 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
 
+      - name: 앱 테스트 실패 원인 출력
+        if: failure()
+        run: |
+          if [ -d build/Coverage.xcresult ]; then
+            xcrun xcresulttool get test-results summary --path build/Coverage.xcresult
+          fi
+
       - name: Sonar 커버리지 보고서 생성
         run: |
           set -euo pipefail
