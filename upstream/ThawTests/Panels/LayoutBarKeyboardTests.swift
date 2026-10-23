@@ -19,7 +19,7 @@ struct LayoutBarKeyboardTests {
         let undoManager = UndoManager()
         undoManager.groupsByEvent = false
         undoManager.beginUndoGrouping()
-        LayoutBarKeyboard.applySectionOrder(
+        LayoutDropCommit.applySectionOrder(
             items.reversed(),
             previousOrder: items,
             section: .visible,

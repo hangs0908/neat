@@ -23,6 +23,32 @@ struct LayoutDropCommitTests {
         LayoutDropCommit.Drop(items: items, source: source, target: target, previousTargetOrder: [], targetOrder: items)
     }
 
+    @Test("같은 분류의 드롭은 한 번 완료하며 실행 취소 관리자 없이도 처리한다", arguments: [false, true])
+    func sameSectionDropCompletesOnce(withUndo: Bool) {
+        let world = World()
+        let items = [World.item("First"), World.item("Second")]
+        let undoManager = withUndo ? UndoManager() : nil
+        undoManager?.groupsByEvent = false
+        undoManager?.beginUndoGrouping()
+        var completions = 0
+        let drop = LayoutDropCommit.Drop(
+            items: [items[1]],
+            source: .visible,
+            target: .visible,
+            previousTargetOrder: items,
+            targetOrder: items.reversed()
+        )
+
+        LayoutDropCommit.commit(drop, appState: world.appState, undoManager: undoManager) {
+            completions += 1
+        }
+        undoManager?.endUndoGrouping()
+
+        #expect(completions == 1)
+        #expect((undoManager?.canUndo ?? false) == withUndo)
+        undoManager?.removeAllActions()
+    }
+
     @Test
     func aDropOfNothingIsRefused() {
         let world = World()
