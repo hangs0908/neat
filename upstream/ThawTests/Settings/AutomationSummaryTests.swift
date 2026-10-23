@@ -32,8 +32,9 @@ struct AutomationSummaryTests {
     @Test("A script path shortens the home folder")
     func scriptPath() {
         let home = NSHomeDirectory()
-        #expect(AutomationSummary.script(path: nil) == "None")
-        #expect(AutomationSummary.script(path: "") == "None")
+        let absentScript = String(localized: "None")
+        #expect(AutomationSummary.script(path: nil) == absentScript)
+        #expect(AutomationSummary.script(path: "") == absentScript)
         #expect(AutomationSummary.script(path: home + "/bin/a.sh") == "~/bin/a.sh")
         #expect(AutomationSummary.script(path: home + "g/a.sh") == home + "g/a.sh")
         #expect(AutomationSummary.script(path: "/opt/a.sh") == "/opt/a.sh")

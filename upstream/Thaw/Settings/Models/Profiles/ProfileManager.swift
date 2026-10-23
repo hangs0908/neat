@@ -543,25 +543,7 @@ final class ProfileManager {
     }
 
     func renameProfile(id: UUID, to newName: String) throws {
-        var profile = try loadProfile(id: id)
-        profile = Profile(
-            id: profile.id,
-            name: newName,
-            createdAt: profile.createdAt,
-            modifiedAt: Date(),
-            content: profile.content
-        )
-
-        let data = try encoder.encode(profile)
-        try data.write(to: profileURL(for: id), options: .atomic)
-
-        if let index = profiles.firstIndex(where: { $0.id == id }) {
-            var updated = profiles[index]
-            updated.name = newName
-            updated.modifiedAt = profile.modifiedAt
-            profiles[index] = updated
-        }
-        try saveManifest()
+        profiles = try ProfileRenamer.rename(id: id, to: newName, in: profilesDirectory, profiles: profiles)
     }
 
     /// Duplicates an existing profile with a new name.
