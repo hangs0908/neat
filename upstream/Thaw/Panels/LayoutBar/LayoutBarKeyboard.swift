@@ -241,7 +241,7 @@ enum LayoutBarKeyboard {
             toIndexInOriginal: destination
         )
         guard newOrder.map(\.tag) != items.map(\.tag) else { return }
-        applySectionOrder(
+        LayoutDropCommit.applySectionOrder(
             newOrder,
             previousOrder: items,
             section: section,
@@ -337,7 +337,7 @@ enum LayoutBarKeyboard {
     ) {
         guard let item = appState.itemManager.managedItem(withTag: tag) else { return }
         if let undoManager {
-            let undoTarget = LayoutBarUndoTarget(appState: appState, undoManager: undoManager)
+            let undoTarget = LayoutDropCommit.UndoTarget(appState: appState, undoManager: undoManager)
             undoManager.registerUndo(withTarget: undoTarget) { [undoTarget] _ in
                 guard let appState = undoTarget.appState,
                       let undoManager = undoTarget.undoManager
@@ -358,62 +358,6 @@ enum LayoutBarKeyboard {
         // A keyboard move in the layout bar is the user's own edit, so Manual lets it through like a drop.
         ExplicitLayoutEdit.perform {
             MenuBarSearchItemActions.move(item, to: target, appState: appState)
-        }
-    }
-
-    // MARK: Order commit
-
-    /// Share the pane's sort sequence: record, schedule apply, and immediately apply revealed hidden sections.
-    static func applySectionOrder(
-        _ order: [MenuBarItem],
-        previousOrder: [MenuBarItem],
-        section: MenuBarSection.Name,
-        appState: AppState,
-        undoManager: UndoManager?,
-        actionName: String
-    ) {
-        if let undoManager {
-            let undoTarget = LayoutBarUndoTarget(appState: appState, undoManager: undoManager)
-            undoManager.registerUndo(withTarget: undoTarget) { [undoTarget] _ in
-                guard let appState = undoTarget.appState,
-                      let undoManager = undoTarget.undoManager
-                else {
-                    return
-                }
-                applySectionOrder(
-                    previousOrder,
-                    previousOrder: order,
-                    section: section,
-                    appState: appState,
-                    undoManager: undoManager,
-                    actionName: actionName
-                )
-            }
-            undoManager.setActionName(actionName)
-        }
-        let controller = appState.menuBarManager.sectionController
-        controller.setSectionOrder(from: order, for: section)
-        // Marked here rather than at the key handler so undo and redo are explicit edits too.
-        ExplicitLayoutEdit.perform {
-            appState.itemManager.scheduleSectionOrderApply(for: section)
-            Task { @MainActor in
-                if section != .visible,
-                   let revealed = controller.revealedSection,
-                   revealed == section || (section == .hidden && revealed == .alwaysHidden)
-                {
-                    let itemManager = appState.itemManager
-                    guard let hold = await itemManager.repairs.enterForUserEdit() else { return }
-                    await itemManager.applySectionItemOrder(
-                        sections: [section],
-                        controller: controller,
-                        whileRevealing: revealed,
-                        reason: .userReorder,
-                        permit: StoreWritePermit(hold)
-                    )
-                    itemManager.repairs.leave(hold)
-                }
-                await appState.itemManager.cacheItemsRegardless(skipRecentMoveCheck: true)
-            }
         }
     }
 
@@ -489,19 +433,6 @@ enum LayoutBarKeyboard {
                 .priority: NSAccessibilityPriorityLevel.high.rawValue,
             ]
         )
-    }
-}
-
-/// 실행 취소 관리자는 대상을 유지하지 않으므로 핸들러가 이 객체를 유지하고 앱 상태는 약하게 참조한다.
-@MainActor
-private final class LayoutBarUndoTarget: NSObject {
-    weak var appState: AppState?
-    /// Weak to avoid a handler cycle; the manager stays alive through the undo operation.
-    weak var undoManager: UndoManager?
-
-    init(appState: AppState, undoManager: UndoManager) {
-        self.appState = appState
-        self.undoManager = undoManager
     }
 }
 

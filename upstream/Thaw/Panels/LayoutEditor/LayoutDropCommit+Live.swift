@@ -34,7 +34,7 @@ extension LayoutDropCommit {
     }
 
     private static func reorder(_ drop: Drop, appState: AppState, undoManager: UndoManager?) {
-        LayoutBarKeyboard.applySectionOrder(
+        applySectionOrder(
             drop.targetOrder,
             previousOrder: drop.previousTargetOrder,
             section: drop.target,
@@ -42,6 +42,60 @@ extension LayoutDropCommit {
             undoManager: undoManager,
             actionName: String(localized: "Move \(drop.items.first?.displayName ?? "")")
         )
+    }
+
+    /// 순서를 기록하고 적용을 예약하며, 펼쳐진 숨김 분류는 즉시 적용한다.
+    static func applySectionOrder(
+        _ order: [MenuBarItem],
+        previousOrder: [MenuBarItem],
+        section: MenuBarSection.Name,
+        appState: AppState,
+        undoManager: UndoManager?,
+        actionName: String
+    ) {
+        if let undoManager {
+            let undoTarget = UndoTarget(appState: appState, undoManager: undoManager)
+            undoManager.registerUndo(withTarget: undoTarget) { [undoTarget] _ in
+                guard let appState = undoTarget.appState,
+                      let undoManager = undoTarget.undoManager
+                else {
+                    return
+                }
+                applySectionOrder(
+                    previousOrder,
+                    previousOrder: order,
+                    section: section,
+                    appState: appState,
+                    undoManager: undoManager,
+                    actionName: actionName
+                )
+            }
+            undoManager.setActionName(actionName)
+        }
+        let controller = appState.menuBarManager.sectionController
+        controller.setSectionOrder(from: order, for: section)
+        // 실행 취소와 다시 실행도 명시적 편집으로 처리한다.
+        ExplicitLayoutEdit.perform {
+            appState.itemManager.scheduleSectionOrderApply(for: section)
+            Task { @MainActor in
+                if section != .visible,
+                   let revealed = controller.revealedSection,
+                   revealed == section || (section == .hidden && revealed == .alwaysHidden)
+                {
+                    let itemManager = appState.itemManager
+                    guard let hold = await itemManager.repairs.enterForUserEdit() else { return }
+                    await itemManager.applySectionItemOrder(
+                        sections: [section],
+                        controller: controller,
+                        whileRevealing: revealed,
+                        reason: .userReorder,
+                        permit: StoreWritePermit(hold)
+                    )
+                    itemManager.repairs.leave(hold)
+                }
+                await appState.itemManager.cacheItemsRegardless(skipRecentMoveCheck: true)
+            }
+        }
     }
 
     /// Seats the items before the assertion flips, as for a move from the item menu, then
@@ -109,6 +163,19 @@ extension LayoutDropCommit {
             )
         )
         return false
+    }
+
+    /// 실행 취소 관리자는 대상을 유지하지 않으므로 핸들러가 대상을 유지하고 앱 상태는 약하게 참조한다.
+    @MainActor
+    final class UndoTarget: NSObject {
+        weak var appState: AppState?
+        /// 핸들러와 순환 참조하지 않도록 관리자는 약하게 참조한다.
+        weak var undoManager: UndoManager?
+
+        init(appState: AppState, undoManager: UndoManager) {
+            self.appState = appState
+            self.undoManager = undoManager
+        }
     }
 
     private static let diagLog = DiagLog(category: "LayoutDropCommit")
