@@ -3,3 +3,4 @@
 .swiftpm/
 .tools/
 build/
+graphify-out/
